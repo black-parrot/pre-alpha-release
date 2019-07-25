@@ -21,6 +21,7 @@
     typedef struct packed                                                                          \
     {                                                                                              \
       logic                                    csr_w_v;                                            \
+      logic                                    compressed_v;                                       \
       logic                                    mem_v;                                              \
       logic                                    fence_v;                                            \
       logic                                    long_v;                                             \
@@ -38,6 +39,7 @@
     {                                                                                              \
       logic                                    v;                                                  \
       logic                                    queue_v;                                            \
+      logic                                    compressed_v;                                       \
       logic [vaddr_width_mp-1:0]               pc;                                                 \
       rv64_instr_s                             instr;                                              \
       bp_be_decode_s                           decode;                                             \
@@ -216,10 +218,10 @@
    *   and an unfortunate, necessary consequence of parameterized structs.
    */
   `define bp_be_issue_pkt_width(vaddr_width_mp, branch_metadata_fwd_width_mp) \
-    (9+3*reg_addr_width_gp)
+    (10+3*reg_addr_width_gp)
 
   `define bp_be_dispatch_pkt_width(vaddr_width_mp) \
-    (2                                                                                             \
+    (3                                                                                             \
      + vaddr_width_mp                                                                              \
      + rv64_instr_width_gp                                                                         \
      + 3                                                                                           \

@@ -215,6 +215,7 @@ $BP_BE_DIR/src/v/bp_be_dcache/bp_be_dcache_wbuf.sv
 ## FE files
 $BP_FE_DIR/src/v/bp_fe_bht.sv
 $BP_FE_DIR/src/v/bp_fe_btb.sv
+$BP_FE_DIR/src/v/bp_fe_expander.v
 $BP_FE_DIR/src/v/bp_fe_icache.sv
 $BP_FE_DIR/src/v/bp_fe_instr_scan.sv
 $BP_FE_DIR/src/v/bp_fe_pc_gen.sv

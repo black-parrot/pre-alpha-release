@@ -76,7 +76,7 @@ module bp_nonsynth_cosim
   bp_be_commit_pkt_s commit_pkt_r;
   logic is_debug_mode_r;
   bsg_dff_reset
-   #(.width_p(1+$bits(commit_pkt)))
+   #(.width_p(1+$bits(bp_be_commit_pkt_s)))
    commit_pkt_reg
     (.clk_i(clk_i)
      ,.reset_i(reset_i)

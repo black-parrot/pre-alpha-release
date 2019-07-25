@@ -30,12 +30,40 @@
   `define RV64_FNMSUB_OP     7'b1001011
   `define RV64_FNMADD_OP     7'b1001111
 
+  `define RV64_C0_OP         2'b00
+  `define RV64_C1_OP         2'b01
+  `define RV64_C2_OP         2'b10
+
   // Some useful RV64 instruction macros
   `define rv64_r_type(op, funct3, funct7) {``funct7``,{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_i_type(op, funct3)         {{12{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_s_type(op, funct3)         {{7{1'b?}},{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
+  `define rv64_b_type(op, funct3)         {{7{1'b?}},{5{1'b?}},{5{1'b?}},``funct3``,{5{1'b?}},``op``}
   `define rv64_u_type(op)                 {{20{1'b?}},{5{1'b?}},``op``}
   `define rv64_fma_type(op, pr2)          {{5{1'b?}},``pr2``,{5{1'b?}},{5{1'b?}},{3{3'b?}},{5{1'b?}},``op``}
+
+  `define rv64_r_type_exp(op, rd, funct3, rs1, rs2, funct7) {``funct7``,``rs2``,``rs1``,``funct3``,``rd``,``op``}
+
+  `define rv64_i_type_exp(op, rd, funct3, rs1, imm) {``imm``[11:0],``rs1``,``funct3``,``rd``,``op``}
+
+  `define rv64_s_type_exp(op, funct3, rs1, rs2, imm) {``imm``[11:5],``rs2``,``rs1``,``funct3``,``imm``[4:0]}
+
+  `define rv64_u_type_exp(op, rd, imm) {``imm``[31:12],``rd``,``op``}
+
+  `define rv64_b_type_exp(op, funct3, rs1, rs2, imm) {``imm``[12],``imm``[10:5],``rs2``,``rs1``,``funct3``,``imm``[4:1],``imm``[11]}
+
+  `define rv64_j_type_exp(op, rd, imm) {``imm``[20],``imm``[10:1],``imm``[11],``imm``[19:12],``rd``,``op``}
+
+  `define rv64_cr_type(op, funct4) {``funct4``,{5{1'b?}},{5{1'b?}},``op``}
+  `define rv64_ci_type(op, funct3) {``funct3``,{1{1'b?}},{5{1'b?}},{5{1'b?}},``op``}
+  `define rv64_css_type(op, funct3) {``funct3``,{6{1'b?}},{5{1'b?}},``op``}
+  `define rv64_ciw_type(op, funct3) {``funct3``,{8{1'b?}},{3{1'b?}},``op``}
+  `define rv64_cl_type(op, funct3) {``funct3``,{3{1'b?}},{3{1'b?}},{2{1'b?}},{3{1'b?}},``op``}
+  `define rv64_cs_type(op, funct3) {``funct3``,{3{1'b?}},{3{1'b?}},{2{1'b?}},{3{1'b?}},``op``}
+  `define rv64_ca_type(op, funct6, funct2) {``funct6``,{3{1'b?}},``funct2``,{3{1'b?}},``op``}
+  `define rv64_cb_type(op, funct3) {``funct3``,{3{1'b?}},{3{1'b?}},{5{1'b?}},``op``}
+  `define rv64_cb2_type(op, funct3, funct2) {``funct3``,{1{1'b?}},``funct2``,{3{1'b?}},{5{1'b?}},``op``}
+  `define rv64_cj_type(op, funct3) {``funct3``,{11{1'b?}},``op``}
 
   // RV64 Immediate sign extension macros
   `define rv64_signext_i_imm(instr) {{53{``instr``[31]}},``instr``[30:20]}
@@ -219,6 +247,58 @@
   `define RV64_FCVT_DL    32'b1101001_00010_?????_???_?????_1010011
   `define RV64_FCVT_DLU   32'b1101001_00011_?????_???_?????_1010011
   `define RV64_FMV_DX     32'b1111001_00000_?????_000_?????_1010011
+
+  // C extension
+  `define RV64_CLWSP      `rv64_ci_type(`RV64_C2_OP,3'b010)
+  `define RV64_CLDSP      `rv64_ci_type(`RV64_C2_OP,3'b011)
+
+  `define RV64_CSWSP      `rv64_css_type(`RV64_C2_OP,3'b110)
+  `define RV64_CSDSP      `rv64_css_type(`RV64_C2_OP,3'b111)
+
+  `define RV64_CLW        `rv64_cl_type(`RV64_C0_OP,3'b010)
+  `define RV64_CLD        `rv64_cl_type(`RV64_C0_OP,3'b011)
+
+  `define RV64_CSW        `rv64_cs_type(`RV64_C0_OP,3'b110)
+  `define RV64_CSD        `rv64_cs_type(`RV64_C0_OP,3'b111)
+
+  `define RV64_CJ         `rv64_cj_type(`RV64_C1_OP,3'b101)
+
+  `define RV64_CJR        16'b1000_????_?000_0010
+  `define RV64_CJALR      16'b1001_????_?000_0010
+
+  `define RV64_CBEQZ      `rv64_cb_type(`RV64_C1_OP,3'b110)
+  `define RV64_CBNEZ      `rv64_cb_type(`RV64_C1_OP,3'b111)
+
+  `define RV64_CLI        `rv64_ci_type(`RV64_C1_OP,3'b010)
+  `define RV64_CLUI       `rv64_ci_type(`RV64_C1_OP,3'b011)
+
+  `define RV64_CADDI      `rv64_ci_type(`RV64_C1_OP,3'b000)
+  `define RV64_CADDIW     `rv64_ci_type(`RV64_C1_OP,3'b001)
+  `define RV64_CADDI16SP  16'b011?_0010_????_??01
+
+  `define RV64_CADDI4SPN  `rv64_ciw_type(`RV64_C0_OP,3'b000)
+  `define RV64_CSLLI      `rv64_ci_type(`RV64_C2_OP,3'b000)
+
+  `define RV64_CSRLI      `rv64_cb2_type(`RV64_C1_OP,3'b100,2'b00)
+  `define RV64_CSRAI      `rv64_cb2_type(`RV64_C1_OP,3'b100,2'b01)
+
+  `define RV64_CANDI      `rv64_cb2_type(`RV64_C1_OP,3'b100,2'b10)
+
+  `define RV64_CMV        `rv64_cr_type(`RV64_C2_OP,4'b1000)
+  `define RV64_CADD       `rv64_cr_type(`RV64_C2_OP,4'b1001)
+
+  `define RV64_CAND       `rv64_ca_type(`RV64_C1_OP,6'b100011,2'b11)
+  `define RV64_COR        `rv64_ca_type(`RV64_C1_OP,6'b100011,2'b10)
+  `define RV64_CXOR       `rv64_ca_type(`RV64_C1_OP,6'b100011,2'b01)
+  `define RV64_CSUB       `rv64_ca_type(`RV64_C1_OP,6'b100011,2'b00)
+  `define RV64_CADDW      `rv64_ca_type(`RV64_C1_OP,6'b100111,2'b01)
+  `define RV64_CSUBW      `rv64_ca_type(`RV64_C1_OP,6'b100111,2'b00)
+
+  `define RV64_CILL       16'b0000_0000_0000_0000
+
+  `define RV64_CNOP       16'b0000_0000_0000_0001
+
+  `define RV64_CEBREAK    16'b1001_0000_0000_0010
 
 `endif
 

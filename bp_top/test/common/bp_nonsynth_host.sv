@@ -89,7 +89,7 @@ module bp_nonsynth_host
   localparam putchar_base_addr_gp    = paddr_width_p'(64'h0010_1000);
   localparam finish_base_addr_gp     = paddr_width_p'(64'h0010_2???);
   localparam putch_core_base_addr_gp = paddr_width_p'(64'h0010_3???);
-  localparam finish_all_addr_gp      = paddr_width_p'(64'h0010_4000);
+  localparam finish_all_base_addr_gp = paddr_width_p'(64'h0010_4000);
   bp_bedrock_cce_mem_msg_s io_cmd_li, io_cmd_lo;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
 
