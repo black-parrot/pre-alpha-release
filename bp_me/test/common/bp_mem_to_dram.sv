@@ -1,8 +1,10 @@
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_mem_to_dram
 
   import bp_common_pkg::*;
-  import bp_common_aviary_pkg::*;
   import bp_me_pkg::*;
 
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
@@ -303,6 +305,7 @@ module bp_mem_to_dram
 
   ,.fifo_deq_v_o(reorder_deq_v_lo)
   ,.fifo_deq_data_o(reorder_deq_data_lo)
+  ,.fifo_deq_id_o()
   ,.fifo_deq_yumi_i(reorder_deq_yumi_li)
 
   ,.empty_o()

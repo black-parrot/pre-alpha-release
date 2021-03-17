@@ -1,7 +1,9 @@
 
+`include "bp_common_defines.svh"
+`include "bp_me_defines.svh"
+
 module bp_me_cache_slice
  import bp_common_pkg::*;
- import bp_common_aviary_pkg::*;
  import bp_be_pkg::*;
  import bsg_cache_pkg::*;
  import bsg_noc_pkg::*;
@@ -13,7 +15,7 @@ module bp_me_cache_slice
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, xce)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(vaddr_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p, cce_pc_width_p, cce_instr_width_p)
+   , localparam cfg_bus_width_lp = `bp_cfg_bus_width(domain_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p)
    )
   (input                                clk_i
    , input                              reset_i
@@ -30,7 +32,7 @@ module bp_me_cache_slice
    , output logic                                      mem_cmd_header_v_o
    , input                                             mem_cmd_header_yumi_i
 
-   , output logic [dword_width_p-1:0]                  mem_cmd_data_o
+   , output logic [dword_width_gp-1:0]                  mem_cmd_data_o
    , output logic                                      mem_cmd_data_v_o
    , input                                             mem_cmd_data_yumi_i
 
@@ -38,15 +40,15 @@ module bp_me_cache_slice
    , input                                             mem_resp_header_v_i
    , output logic                                      mem_resp_header_ready_o
 
-   , input [dword_width_p-1:0]                         mem_resp_data_i
+   , input [dword_width_gp-1:0]                         mem_resp_data_i
    , input                                             mem_resp_data_v_i
    , output logic                                      mem_resp_data_ready_o
    );
 
-  `declare_bsg_cache_pkt_s(paddr_width_p, dword_width_p);
+  `declare_bsg_cache_pkt_s(caddr_width_p, dword_width_gp);
   bsg_cache_pkt_s cache_pkt_li;
   logic cache_pkt_v_li, cache_pkt_ready_lo;
-  logic [dword_width_p-1:0] cache_data_lo;
+  logic [dword_width_gp-1:0] cache_data_lo;
   logic cache_data_v_lo, cache_data_yumi_li;
   bp_me_cce_to_cache
    #(.bp_params_p(bp_params_p))
@@ -71,15 +73,29 @@ module bp_me_cache_slice
      ,.yumi_o(cache_data_yumi_li)
      );
 
-  `declare_bsg_cache_dma_pkt_s(paddr_width_p);
+  `declare_bsg_cache_dma_pkt_s(caddr_width_p);
   bsg_cache_dma_pkt_s dma_pkt_lo;
   logic dma_pkt_v_lo, dma_pkt_yumi_li;
+
+  localparam [31:0] l2_amo_support_lp =
+    (((amo_swap_p == e_l2) << e_cache_amo_swap)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_xor)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_and)
+     | ((amo_fetch_logic_p == e_l2) << e_cache_amo_or)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_add)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_min)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_max)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_minu)
+     | ((amo_fetch_arithmetic_p == e_l2) << e_cache_amo_maxu)
+     );
+
   bsg_cache
-   #(.addr_width_p(paddr_width_p)
-     ,.data_width_p(dword_width_p)
-     ,.block_size_in_words_p(cce_block_width_p/dword_width_p)
+   #(.addr_width_p(caddr_width_p)
+     ,.data_width_p(dword_width_gp)
+     ,.block_size_in_words_p(cce_block_width_p/dword_width_gp)
      ,.sets_p(l2_sets_p)
      ,.ways_p(l2_assoc_p)
+     ,.amo_support_p(l2_amo_support_lp)
      )
    cache
     (.clk_i(clk_i)
@@ -124,6 +140,7 @@ module bp_me_cache_slice
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `bp_cast_o(bp_bedrock_cce_mem_msg_header_s, mem_cmd_header);
   assign mem_cmd_header_cast_o = '{msg_type : dma_pkt_lo.write_not_read ? e_bedrock_mem_wr : e_bedrock_mem_rd
+                                   ,subop   : e_bedrock_amoswap
                                    ,size    : mem_cmd_block_size
                                    ,addr    : dma_pkt_lo.addr
                                    ,payload : '0
