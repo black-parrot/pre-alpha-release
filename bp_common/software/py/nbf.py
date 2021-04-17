@@ -259,7 +259,7 @@ class NBF:
     self.print_fence()
 
     # Freeze clear
-    self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 0)
+    #self.print_nbf_allcores(3, cfg_base_addr + cfg_reg_freeze, 0)
     # EOF
     self.print_fence()
     self.print_finish()

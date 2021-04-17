@@ -61,3 +61,19 @@ $BASEJUMP_STL_DIR/bsg_dmc/bsg_dmc_phy.v
 $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_dma.cpp
 # me files
 $BP_ME_DIR/test/common/bp_nonsynth_dram.sv
+# debug files
+$DEBUG_DIR/tb/SimJTAG.sv
+$DEBUG_DIR/tb/remote_bitbang/sim_jtag.c
+$DEBUG_DIR/tb/remote_bitbang/remote_bitbang.c
+$DEBUG_DIR/src/dm_pkg.sv
+$DEBUG_DIR/src/dm_csrs.sv
+$DEBUG_DIR/src/dm_mem.sv
+$DEBUG_DIR/src/dm_sba.sv
+$DEBUG_DIR/src/dm_top.sv
+$DEBUG_DIR/src/dmi_cdc.sv
+$DEBUG_DIR/src/dmi_jtag.sv
+$DEBUG_DIR/src/dmi_jtag_tap.sv
+$DEBUG_DIR/debug_rom/debug_rom.sv
+$COMMON_CELLS_DIR/src/cdc_2phase.sv
+$TECH_CELLS_DIR/src/pulp_clock_mux2.sv
+$TECH_CELLS_DIR/src/cluster_clock_inverter.sv

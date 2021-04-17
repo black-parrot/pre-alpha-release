@@ -260,6 +260,197 @@ module testbench
      ,.cosim_en_o(cosim_en_lo)
      );
 
+
+  // disable test-enable
+  logic        test_en;
+  logic        ndmreset;
+  logic        ndmreset_n;
+  logic        debug_req_core;
+
+  int          jtag_enable;
+  logic        init_done;
+  logic [31:0] jtag_exit, dmi_exit;
+
+  logic        jtag_TCK;
+  logic        jtag_TMS;
+  logic        jtag_TDI;
+  logic        jtag_TRSTn;
+  logic        jtag_TDO_data;
+  logic        jtag_TDO_driven;
+
+  logic        debug_req_valid;
+  logic        debug_req_ready;
+  logic        debug_resp_valid;
+  logic        debug_resp_ready;
+
+  logic        jtag_req_valid;
+  logic [6:0]  jtag_req_bits_addr;
+  logic [1:0]  jtag_req_bits_op;
+  logic [31:0] jtag_req_bits_data;
+  logic        jtag_resp_ready;
+  logic        jtag_resp_valid;
+
+  logic        dmi_req_valid;
+  logic        dmi_resp_ready;
+  logic        dmi_resp_valid;
+
+  dm::dmi_req_t  jtag_dmi_req;
+  dm::dmi_req_t  dmi_req;
+
+  dm::dmi_req_t  debug_req;
+  dm::dmi_resp_t debug_resp;
+
+  assign test_en = 1'b0;
+
+  assign jtag_enable = 1'b1;
+  assign init_done = ~reset_i;
+
+  // debug if MUX
+  assign debug_req_valid     = (jtag_enable[0]) ? jtag_req_valid     : dmi_req_valid;
+  assign debug_resp_ready    = (jtag_enable[0]) ? jtag_resp_ready    : dmi_resp_ready;
+  assign debug_req           = (jtag_enable[0]) ? jtag_dmi_req       : dmi_req;
+  assign exit_o              = (jtag_enable[0]) ? jtag_exit          : dmi_exit;
+  assign jtag_resp_valid     = (jtag_enable[0]) ? debug_resp_valid   : 1'b0;
+  assign dmi_resp_valid      = (jtag_enable[0]) ? 1'b0               : debug_resp_valid;
+
+  // SiFive's SimJTAG Module
+  // Converts to DPI calls
+  SimJTAG i_SimJTAG (
+    .clock                ( clk_i                ),
+    .reset                ( reset_i              ),
+    .enable               ( jtag_enable[0]       ),
+    .init_done            ( init_done            ),
+    .jtag_TCK             ( jtag_TCK             ),
+    .jtag_TMS             ( jtag_TMS             ),
+    .jtag_TDI             ( jtag_TDI             ),
+    .jtag_TRSTn           ( jtag_TRSTn           ),
+    .jtag_TDO_data        ( jtag_TDO_data        ),
+    .jtag_TDO_driven      ( jtag_TDO_driven      ),
+    .exit                 ( jtag_exit            )
+  );
+
+  dmi_jtag i_dmi_jtag (
+    .clk_i            ( clk_i           ),
+    .rst_ni           ( ~reset_i        ),
+    .testmode_i       ( test_en         ),
+    .dmi_req_o        ( jtag_dmi_req    ),
+    .dmi_req_valid_o  ( jtag_req_valid  ),
+    .dmi_req_ready_i  ( debug_req_ready ),
+    .dmi_resp_i       ( debug_resp      ),
+    .dmi_resp_ready_o ( jtag_resp_ready ),
+    .dmi_resp_valid_i ( jtag_resp_valid ),
+    .dmi_rst_no       (                 ), // not connected
+    .tck_i            ( jtag_TCK        ),
+    .tms_i            ( jtag_TMS        ),
+    .trst_ni          ( jtag_TRSTn      ),
+    .td_i             ( jtag_TDI        ),
+    .td_o             ( jtag_TDO_data   ),
+    .tdo_oe_o         ( jtag_TDO_driven )
+  );
+
+  // SiFive's SimDTM Module
+  // Converts to DPI calls
+  logic [1:0] debug_req_bits_op;
+  assign dmi_req.op = dm::dtm_op_e'(debug_req_bits_op);
+
+    assign dmi_req_valid = '0;
+    assign debug_req_bits_op = '0;
+    assign dmi_exit = 1'b0;
+
+ // this delay window allows the core to read and execute init code
+  // from the bootrom before the first debug request can interrupt
+  // core. this is needed in cases where an fsbl is involved that
+  // expects a0 and a1 to be initialized with the hart id and a
+  // pointer to the dev tree, respectively.
+  localparam int unsigned DmiDelCycles = 500;
+
+  logic debug_req_core_ungtd;
+  int dmi_del_cnt_d, dmi_del_cnt_q;
+
+  assign dmi_del_cnt_d  = (dmi_del_cnt_q) ? dmi_del_cnt_q - 1 : 0;
+  assign debug_req_core = (dmi_del_cnt_q) ? 1'b0 : debug_req_core_ungtd;
+
+  always_ff @(posedge clk_i or posedge reset_i) begin : p_dmi_del_cnt
+    if(reset_i) begin
+      dmi_del_cnt_q <= DmiDelCycles;
+    end else begin
+      dmi_del_cnt_q <= dmi_del_cnt_d;
+    end
+  end
+
+  logic                dm_slave_req;
+  logic                dm_slave_we;
+  logic [64-1:0]       dm_slave_addr;
+  logic [64/8-1:0]     dm_slave_be;
+  logic [64-1:0]       dm_slave_wdata;
+  logic [64-1:0]       dm_slave_rdata;
+
+  logic                dm_master_req;
+  logic [64-1:0]       dm_master_add;
+  logic                dm_master_we;
+  logic [64-1:0]       dm_master_wdata;
+  logic [64/8-1:0]     dm_master_be;
+  logic                dm_master_gnt;
+  logic                dm_master_r_valid;
+  logic [64-1:0]       dm_master_r_rdata;
+
+    localparam dm::hartinfo_t DebugHartInfo = '{
+                                                zero1:        '0,
+                                                nscratch:      2, // Debug module needs at least two scratch regs
+                                                zero0:        '0,
+                                                dataaccess: 1'b1, // data registers are memory mapped in the debugger
+                                                datasize: dm::DataCount,
+                                                dataaddr: dm::DataAddr
+                                              };
+
+  // debug module
+  dm_top #(
+    .NrHarts              ( 1                           ),
+    .BusWidth             ( 64                          ),
+    .SelectableHarts      ( 1'b1                        )
+  ) i_dm_top (
+    .clk_i                ( clk_i                       ),
+    .rst_ni               ( ~reset_i                    ), // PoR
+    .testmode_i           ( test_en                     ),
+    .ndmreset_o           ( ndmreset                    ),
+    .dmactive_o           (                             ), // active debug session
+    .debug_req_o          ( debug_req_core_ungtd        ),
+    .unavailable_i        ( '0                          ),
+    .hartinfo_i           ( DebugHartInfo               ),
+    .slave_req_i          ( dm_slave_req                ),
+    .slave_we_i           ( dm_slave_we                 ),
+    .slave_addr_i         ( dm_slave_addr               ),
+    .slave_be_i           ( dm_slave_be                 ),
+    .slave_wdata_i        ( dm_slave_wdata              ),
+    .slave_rdata_o        ( dm_slave_rdata              ),
+    .master_req_o         ( dm_master_req               ),
+    .master_add_o         ( dm_master_add               ),
+    .master_we_o          ( dm_master_we                ),
+    .master_wdata_o       ( dm_master_wdata             ),
+    .master_be_o          ( dm_master_be                ),
+    .master_gnt_i         ( dm_master_gnt               ),
+    .master_r_valid_i     ( dm_master_r_valid           ),
+    .master_r_rdata_i     ( dm_master_r_rdata           ),
+    .dmi_rst_ni           ( ~reset_i                    ),
+    .dmi_req_valid_i      ( debug_req_valid             ),
+    .dmi_req_ready_o      ( debug_req_ready             ),
+    .dmi_req_i            ( debug_req                   ),
+    .dmi_resp_valid_o     ( debug_resp_valid            ),
+    .dmi_resp_ready_i     ( debug_resp_ready            ),
+    .dmi_resp_o           ( debug_resp                  )
+  );
+
+  // Stub system bus
+  assign dm_slave_req = '0;
+  assign dm_slave_we = '0;
+  assign dm_slave_addr = '0;
+  assign dm_slave_be = '0;
+  assign dm_slave_wdata = '0;
+
+  assign dm_master_gnt = '0;
+  assign dm_master_r_valid = '0;
+  assign dm_master_r_rdata = '0;
+
   if (no_bind_p == 0)
     begin : do_bind
       bind bp_be_top

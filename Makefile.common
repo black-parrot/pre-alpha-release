@@ -10,6 +10,9 @@ export BP_TOP_DIR       := $(TOP)/bp_top
 export BP_EXTERNAL_DIR  := $(TOP)/external
 export BASEJUMP_STL_DIR := $(BP_EXTERNAL_DIR)/basejump_stl
 export HARDFLOAT_DIR    := $(BP_EXTERNAL_DIR)/HardFloat
+export DEBUG_DIR        := $(BP_EXTERNAL_DIR)/riscv-dbg
+export COMMON_CELLS_DIR := $(BP_EXTERNAL_DIR)/common_cells
+export TECH_CELLS_DIR   := $(BP_EXTERNAL_DIR)/tech_cells_generic
 
 export BP_TOOLS_DIR     ?= $(TOP)/tools
 export BP_HDK_DIR       ?= $(TOP)/../hdk

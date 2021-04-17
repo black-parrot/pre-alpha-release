@@ -4,13 +4,13 @@
     url = https://github.com/verilator/verilator
     branch = master
     ignore = untracked
-    update = none
+    update = checkout
 [submodule "tools/bsg_sv2v"]
     path = tools/bsg_sv2v
     url = https://github.com/bespoke-silicon-group/bsg_sv2v
     branch = master
     ignore = untracked
-    update = none
+    update = checkout
 
 [submodule "external/basejump_stl"]
     path = external/basejump_stl
@@ -31,4 +31,19 @@
 	path = tools/dromajo
 	url = https://github.com/bsg-external/dromajo
     branch = blackparrot_mods
+    update = checkout
+[submodule "external/riscv-dbg"]
+    path = external/riscv-dbg
+    url = https://github.com/pulp-platform/riscv-dbg
+    branch = master
+    update = checkout
+[submodule "external/common_cells"]
+	path = external/common_cells
+	url = https://github.com/pulp-platform/common_cells
+    branch = master
+    update = checkout
+[submodule "external/tech_cells_generic"]
+	path = external/tech_cells_generic
+	url = https://github.com/pulp-platform/tech_cells_generic
+    branch = master
     update = checkout
