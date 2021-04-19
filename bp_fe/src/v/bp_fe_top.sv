@@ -284,8 +284,8 @@ module bp_fe_top
 
      ,.ptag_i(ptag_li)
      ,.ptag_v_i(ptag_v_li)
-     ,.uncached_i(ptag_uncached_li)
-     ,.nonidem_i(ptag_nonidem_li)
+     ,.ptag_uncached_i(ptag_uncached_li)
+     ,.ptag_nonidem_i(ptag_nonidem_li)
      ,.poison_tl_i(icache_poison_tl)
 
      ,.data_o(icache_data_lo)
