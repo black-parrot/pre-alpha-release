@@ -124,9 +124,10 @@ module bp_fe_icache
   localparam fill_size_in_bank_lp   = fill_width_p / bank_width_lp;
 
   // State machine declaration
-  enum logic [1:0] {e_ready, e_miss} state_n, state_r;
+  enum logic [1:0] {e_ready, e_miss, e_req} state_n, state_r;
   wire is_ready   = (state_r == e_ready);
   wire is_miss    = (state_r == e_miss);
+  wire is_req     = (state_r == e_req);
 
   // Feedback signals between stages
   logic tl_we, tv_we;
@@ -385,7 +386,8 @@ module bp_fe_icache
   wire uncached_req = v_tv_r & uncached_op_tv_r & fill_tv_r & ~uncached_pending_r;
   wire fencei_req   = v_tv_r & fencei_op_tv_r & !coherent_p;
 
-  assign cache_req_v_o = |{uncached_req, cached_req, fencei_req} & ~poison_tv_i;
+  assign cache_req_v_o = is_req
+    | v_tv_r & (~poison_tv_i & |{uncached_req, cached_req, fencei_req});
   assign cache_req_cast_o =
    '{addr     : paddr_tv_r
      ,size    : cached_req ? block_req_size : uncached_req_size
@@ -442,11 +444,17 @@ module bp_fe_icache
   // State machine
   //   e_ready  : Cache is ready to accept requests
   //   e_miss   : Cache is waiting for a cache request to be serviced
+  //   e_req    : Cache is waiting to send a blocking request to the engine
   /////////////////////////////////////////////////////////////////////////////
   always_comb
     case (state_r)
-      e_ready  : state_n = cache_req_yumi_i ? e_miss : e_ready;
+      e_ready  : state_n = cache_req_yumi_i
+                           ? e_miss
+                           : (cache_req_v_o & ~cache_req_yumi_i)
+                             ? e_req
+                             : e_ready;
       e_miss   : state_n = cache_req_complete_i ? e_ready : e_miss;
+      e_req    : state_n = cache_req_yumi_i ? e_miss : e_req;
       default: state_n = e_ready;
     endcase
 
