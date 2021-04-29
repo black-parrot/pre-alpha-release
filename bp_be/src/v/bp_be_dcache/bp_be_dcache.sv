@@ -798,8 +798,18 @@ module bp_be_dcache
   // Uncached stores and writethrough requests are non-blocking
   wire nonblocking_req     = uncached_store_req | wt_req;
 
-  assign cache_req_v_o = is_req
+  wire cache_req_v_lo = is_req
     | v_tv_r & (~flush_i & |{cached_req, fencei_req, l2_amo_req, uncached_load_req, uncached_store_req, wt_req});
+
+  logic cache_req_v_r;
+  bsg_dff
+   #(.width_p(1))
+   cache_req_v_sync_reg
+    (.clk_i(clk_i)
+     ,.data_i(cache_req_v_lo)
+     ,.data_o(cache_req_v_r)
+     );
+  assign cache_req_v_o = clk_i ? cache_req_v_lo : cache_req_v_r;
 
   always_comb
     begin
@@ -942,7 +952,17 @@ module bp_be_dcache
     : tag_mem_fast_write
       ? paddr_index_tv
       : tag_mem_pkt_cast_i.index;
-  assign tag_mem_pkt_yumi_o = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
+  wire tag_mem_pkt_yumi_lo = ~cache_lock & tag_mem_pkt_v_i & ~tag_mem_fast_read & ~tag_mem_fast_write;
+
+  logic tag_mem_pkt_yumi_r;
+  bsg_dff
+   #(.width_p(1))
+   tag_mem_pkt_sync_reg
+    (.clk_i(~clk_i)
+     ,.data_i(tag_mem_pkt_yumi_lo)
+     ,.data_o(tag_mem_pkt_yumi_r)
+     );
+  assign tag_mem_pkt_yumi_o = clk_i ? tag_mem_pkt_yumi_lo : tag_mem_pkt_yumi_r;
 
   logic [assoc_p-1:0] tag_mem_way_one_hot;
   bsg_decode
@@ -1078,10 +1098,19 @@ module bp_be_dcache
   //   in the write buffer, so that the write buffer will only drain if it is full, or if there is
   //   a snoop match. However, this is a critical path, so we drain the write buffer on invalidations.
   // A similar scheme could be adopted for a non-blocking version, where we snoop the bank
-  assign data_mem_pkt_yumi_o = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
+  wire data_mem_pkt_yumi_lo = (data_mem_pkt_cast_i.opcode == e_cache_data_mem_uncached)
                                ? ~cache_lock & data_mem_pkt_v_i
                                : ~cache_lock & data_mem_pkt_v_i & ~|data_mem_fast_read & ~wbuf_v_lo & ~wbuf_v_li;
 
+  logic data_mem_pkt_yumi_r;
+  bsg_dff
+   #(.width_p(1))
+   data_mem_pkt_sync_reg
+    (.clk_i(~clk_i)
+     ,.data_i(data_mem_pkt_yumi_lo)
+     ,.data_o(data_mem_pkt_yumi_r)
+     );
+  assign data_mem_pkt_yumi_o = clk_i ? data_mem_pkt_yumi_lo : data_mem_pkt_yumi_r;
 
   logic [lg_dcache_assoc_lp-1:0] data_mem_pkt_way_r;
   bsg_dff
@@ -1114,7 +1143,16 @@ module bp_be_dcache
   assign stat_mem_addr_li = (stat_mem_fast_write | stat_mem_fast_read)
     ? paddr_tv_r[block_offset_width_lp+:sindex_width_lp]
     : stat_mem_pkt_cast_i.index;
-  assign stat_mem_pkt_yumi_o = ~cache_lock & stat_mem_pkt_v_i & ~stat_mem_fast_read & ~stat_mem_fast_write;
+  wire stat_mem_pkt_yumi_lo = ~cache_lock & stat_mem_pkt_v_i & ~stat_mem_fast_read & ~stat_mem_fast_write;
+  logic stat_mem_pkt_yumi_r;
+  bsg_dff
+   #(.width_p(1))
+   stat_mem_pkt_sync_reg
+    (.clk_i(~clk_i)
+     ,.data_i(stat_mem_pkt_yumi_lo)
+     ,.data_o(stat_mem_pkt_yumi_r)
+     );
+  assign stat_mem_pkt_yumi_o = clk_i ? stat_mem_pkt_yumi_lo : stat_mem_pkt_yumi_r;
 
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_data_lo;
   logic [`BSG_SAFE_MINUS(assoc_p, 2):0] lru_decode_mask_lo;
