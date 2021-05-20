@@ -1,3 +1,4 @@
+`include "bsg_defines.v"
 
 `include "bsg_defines.v"
 
