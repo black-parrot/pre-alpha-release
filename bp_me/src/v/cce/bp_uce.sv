@@ -100,7 +100,25 @@ module bp_uce
   `bp_cast_o(bp_cache_data_mem_pkt_s, data_mem_pkt);
   `bp_cast_o(bp_cache_stat_mem_pkt_s, stat_mem_pkt);
 
-  enum logic [3:0] {e_reset, e_clear, e_flush_read, e_flush_scan, e_flush_write, e_flush_fence, e_ready, e_uc_writeback_evict, e_uc_writeback_write_req, e_send_critical, e_writeback_evict, e_writeback_read_req, e_writeback_write_req, e_write_wait, e_read_wait, e_uc_read_wait} state_n, state_r;
+  enum logic [3:0] {
+    e_reset
+    , e_clear
+    , e_flush_read
+    , e_flush_scan
+    , e_flush_write
+    , e_flush_fence
+    , e_ready
+    , e_uc_writeback_evict
+    , e_uc_writeback_write_req
+    , e_send_critical
+    , e_writeback_evict
+    , e_writeback_read_req
+    , e_writeback_write_req
+    , e_write_wait
+    , e_read_wait
+    , e_uc_read_wait
+  } state_n, state_r;
+
   wire is_reset           = (state_r == e_reset);
   wire is_clear           = (state_r == e_clear);
   wire is_flush_read      = (state_r == e_flush_read);
@@ -110,7 +128,7 @@ module bp_uce
   wire is_ready           = (state_r == e_ready);
   wire is_send_critical   = (state_r == e_send_critical);
   wire is_writeback_evict = (state_r == e_writeback_evict); // read dirty data from cache to UCE
-  wire is_writeback_read  = (state_r == e_writeback_read_wait); // read data from L2 to cache
+  wire is_writeback_read  = (state_r == e_writeback_read_req); // read data from L2 to cache
   wire is_writeback_wb    = (state_r == e_writeback_write_req); // send dirty data from UCE to L2
   wire is_write_request   = (state_r == e_write_wait);
   wire is_read_request    = (state_r == e_read_wait);
@@ -243,8 +261,8 @@ module bp_uce
      ,.fsm_data_i(fsm_cmd_data_lo)
      ,.fsm_v_i(fsm_cmd_v_lo)
      ,.fsm_ready_and_o(fsm_cmd_ready_and_li)
-     ,.fsm_cnt_o(fsm_cmd_cnt)
-     ,.fsm_done_o(fsm_cmd_done)
+     ,.stream_cnt_o(fsm_cmd_cnt)
+     ,.stream_done_o(fsm_cmd_done)
      );
 
   bp_bedrock_uce_mem_msg_header_s fsm_resp_header_li;
@@ -274,8 +292,8 @@ module bp_uce
      ,.fsm_data_o(fsm_resp_data_li)
      ,.fsm_v_o(fsm_resp_v_li)
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
-     ,.fsm_new_o(fsm_resp_new)
-     ,.fsm_done_o(fsm_resp_done)
+     ,.stream_new_o(fsm_resp_new)
+     ,.stream_done_o(fsm_resp_done)
      );
   assign mem_resp_yumi_o = mem_resp_ready_and_lo & mem_resp_v_i;
 
@@ -644,9 +662,9 @@ module bp_uce
             stat_mem_pkt_cast_o.way_id = cache_req_metadata_r.hit_or_repl_way;
             stat_mem_pkt_v_o = 1'b1;
 
-            state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_wait : e_writeback_evict;
+            state_n = (data_mem_pkt_yumi_i & tag_mem_pkt_yumi_i & stat_mem_pkt_yumi_i) ? e_writeback_read_req : e_writeback_evict;
           end
-        e_writeback_read_wait:
+        e_writeback_read_req:
           begin
             // send the sub-block from L2 to cache
             tag_mem_pkt_cast_o.opcode = e_cache_tag_mem_set_tag;
@@ -728,7 +746,7 @@ always_ff @(negedge clk_i)
     assert((metadata_latency_p < 2))
       else $error("metadata needs to arrive within one cycle of the request");
 
-    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_wait, e_writeback_write_req}))
+    assert((l1_writethrough_p == 0) || !(state_r inside {e_uc_writeback_evict, e_writeback_evict, e_uc_writeback_write_req, e_writeback_read_req, e_writeback_write_req}))
       else $error("writethrough cache should not be in writeback states");
   end
 
