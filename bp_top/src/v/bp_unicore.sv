@@ -89,7 +89,9 @@ module bp_unicore
      ,.mem_resp_data_i(mem_resp_data_li)
      ,.mem_resp_v_i(mem_resp_v_li)
      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
-     ,.mem_resp_last_i(mem_resp_v_li) // stub
+     ,.mem_resp_last_i(mem_resp_last_li)
+     // TODO: why not just use mem_resp_last_li?
+     //,.mem_resp_last_i(mem_resp_v_li) // stub
 
      // I/O
      ,.*
