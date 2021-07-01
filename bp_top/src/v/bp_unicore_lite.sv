@@ -110,7 +110,7 @@ module bp_unicore_lite
 
   logic timer_irq_li, software_irq_li, external_irq_li;
 
-  // TODO: comment about what is connected to each index
+  // proc_cmd[2:0] = {IO cmd, BE UCE, FE UCE}
   bp_bedrock_uce_mem_msg_header_s [2:0] proc_cmd_header_lo;
   logic [2:0][uce_mem_data_width_lp-1:0] proc_cmd_data_lo;
   logic [2:0] proc_cmd_v_lo, proc_cmd_yumi_li, proc_cmd_last_lo;
@@ -118,7 +118,7 @@ module bp_unicore_lite
   logic [2:0][uce_mem_data_width_lp-1:0] proc_resp_data_li;
   logic [2:0] proc_resp_v_li, proc_resp_yumi_lo, proc_resp_last_li;
 
-  // TODO: comment about what is connected to each index
+  // dev_cmd[4:0] = {CCE loopback, Mem cmd, IO cmd, CLINT, CFG}
   bp_bedrock_uce_mem_msg_header_s [4:0] dev_cmd_header_li;
   logic [4:0][uce_mem_data_width_lp-1:0] dev_cmd_data_li;
   logic [4:0] dev_cmd_v_li, dev_cmd_ready_and_lo, dev_cmd_last_li;
