@@ -126,14 +126,6 @@ module bp_unicore_lite
   logic [4:0][uce_mem_data_width_lp-1:0] dev_resp_data_lo;
   logic [4:0] dev_resp_v_lo, dev_resp_ready_and_li, dev_resp_last_lo;
 
-  bp_bedrock_uce_mem_msg_s mem_cmd_lo;
-  assign mem_cmd_header_o = mem_cmd_lo.header;
-  assign mem_cmd_data_o = mem_cmd_lo.data;
-  bp_bedrock_uce_mem_msg_s mem_resp_li;
-  assign mem_resp_li = '{header: mem_resp_header_i
-                         ,data: mem_resp_data_i
-                         };
-
   bp_cfg_bus_s cfg_bus_lo;
   bp_core_minimal
    #(.bp_params_p(bp_params_p))
