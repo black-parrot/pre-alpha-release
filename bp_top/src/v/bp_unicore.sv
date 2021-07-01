@@ -22,22 +22,30 @@ module bp_unicore
    , input                                             reset_i
 
    // Outgoing I/O
-   , output logic [uce_mem_msg_width_lp-1:0]           io_cmd_o
+   , output logic [uce_mem_msg_header_width_lp-1:0]    io_cmd_header_o
+   , output logic [uce_mem_data_width_lp-1:0]          io_cmd_data_o
    , output logic                                      io_cmd_v_o
    , input                                             io_cmd_ready_and_i
+   , output logic                                      io_cmd_last_o
 
-   , input [uce_mem_msg_width_lp-1:0]                  io_resp_i
+   , input [uce_mem_msg_header_width_lp-1:0]           io_resp_header_i
+   , input [uce_mem_data_width_lp-1:0]                 io_resp_data_i
    , input                                             io_resp_v_i
    , output logic                                      io_resp_yumi_o
+   , input                                             io_resp_last_i
 
    // Incoming I/O
-   , input [uce_mem_msg_width_lp-1:0]                  io_cmd_i
+   , input [uce_mem_msg_header_width_lp-1:0]           io_cmd_header_i
+   , input [uce_mem_data_width_lp-1:0]                 io_cmd_data_i
    , input                                             io_cmd_v_i
    , output logic                                      io_cmd_yumi_o
+   , input                                             io_cmd_last_i
 
-   , output logic [uce_mem_msg_width_lp-1:0]           io_resp_o
+   , output logic [uce_mem_msg_header_width_lp-1:0]    io_resp_header_o
+   , output logic [uce_mem_data_width_lp-1:0]          io_resp_data_o
    , output logic                                      io_resp_v_o
    , input                                             io_resp_ready_and_i
+   , output logic                                      io_resp_last_o
 
    // DRAM interface
    , output logic [dma_pkt_width_lp-1:0]               dma_pkt_o
@@ -60,10 +68,10 @@ module bp_unicore
 
   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
   logic [uce_mem_data_width_lp-1:0] mem_cmd_data_lo;
-  logic mem_cmd_v_lo, mem_cmd_last_lo, mem_cmd_ready_and_li;
+  logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
   logic [uce_mem_data_width_lp-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_last_li, mem_resp_ready_and_lo;
+  logic mem_resp_v_li, mem_resp_yumi_lo, mem_resp_last_li;
 
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
@@ -71,33 +79,20 @@ module bp_unicore
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
 
-     ,.io_cmd_o(io_cmd_o)
-     ,.io_cmd_v_o(io_cmd_v_o)
-     ,.io_cmd_ready_and_i(io_cmd_ready_and_i)
-
-     ,.io_resp_i(io_resp_i)
-     ,.io_resp_v_i(io_resp_v_i)
-     ,.io_resp_yumi_o(io_resp_yumi_o)
-
-     ,.io_cmd_i(io_cmd_i)
-     ,.io_cmd_v_i(io_cmd_v_i)
-     ,.io_cmd_yumi_o(io_cmd_yumi_o)
-
-     ,.io_resp_o(io_resp_o)
-     ,.io_resp_v_o(io_resp_v_o)
-     ,.io_resp_ready_and_i(io_resp_ready_and_i)
-
      ,.mem_cmd_header_o(mem_cmd_header_lo)
      ,.mem_cmd_data_o(mem_cmd_data_lo)
-     ,.mem_cmd_last_o(mem_cmd_last_lo)
      ,.mem_cmd_v_o(mem_cmd_v_lo)
      ,.mem_cmd_ready_and_i(mem_cmd_ready_and_li)
+     ,.mem_cmd_last_o(mem_cmd_last_lo)
 
      ,.mem_resp_header_i(mem_resp_header_li)
      ,.mem_resp_data_i(mem_resp_data_li)
-     ,.mem_resp_last_i(mem_resp_last_li)
      ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
+     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+     ,.mem_resp_last_i(mem_resp_v_li) // stub
+
+     // I/O
+     ,.*
      );
 
   `declare_bsg_cache_pkt_s(caddr_width_p, l2_data_width_p);
