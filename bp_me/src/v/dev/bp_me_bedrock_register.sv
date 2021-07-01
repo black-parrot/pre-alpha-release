@@ -76,11 +76,11 @@ module bp_me_bedrock_register
    cmd_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
-  
+
      ,.data_i({mem_cmd_data_i, mem_cmd_header_i})
      ,.v_i(mem_cmd_v_i)
      ,.ready_o(mem_cmd_ready_and_o)
-  
+
      ,.data_o({mem_cmd_data_li, mem_cmd_header_li})
      ,.v_o(mem_cmd_v_li)
      ,.yumi_i(mem_cmd_yumi_li)
