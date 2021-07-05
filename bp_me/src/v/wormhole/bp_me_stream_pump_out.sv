@@ -73,7 +73,7 @@ module bp_me_stream_pump_out
   initial begin
     assert((block_width_p % stream_data_width_p == 0)) else
       $error("block_width_p must be evenly divisible by stream_data_width_p");
-    assert((block_width_p >= stream_data_width_p == 0)) else
+    assert(block_width_p >= stream_data_width_p) else
       $error("block_width_p must be at least as large as stream_data_width_p");
   end
   //synopsys translate_on
