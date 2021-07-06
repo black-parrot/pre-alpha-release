@@ -71,7 +71,7 @@ module bp_unicore
   logic mem_cmd_v_lo, mem_cmd_ready_and_li, mem_cmd_last_lo;
   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
   logic [uce_mem_data_width_lp-1:0] mem_resp_data_li;
-  logic mem_resp_v_li, mem_resp_yumi_lo, mem_resp_last_li;
+  logic mem_resp_v_li, mem_resp_ready_and_lo, mem_resp_last_li;
 
   bp_unicore_lite
    #(.bp_params_p(bp_params_p))
@@ -88,7 +88,7 @@ module bp_unicore
      ,.mem_resp_header_i(mem_resp_header_li)
      ,.mem_resp_data_i(mem_resp_data_li)
      ,.mem_resp_v_i(mem_resp_v_li)
-     ,.mem_resp_yumi_o(mem_resp_yumi_lo)
+     ,.mem_resp_ready_and_o(mem_resp_ready_and_lo)
      ,.mem_resp_last_i(mem_resp_last_li)
 
      // I/O
@@ -117,8 +117,7 @@ module bp_unicore
      ,.mem_resp_data_o(mem_resp_data_li)
      ,.mem_resp_last_o(mem_resp_last_li)
      ,.mem_resp_v_o(mem_resp_v_li)
-     // TODO: yumi connected to ready_and
-     ,.mem_resp_ready_and_i(mem_resp_yumi_lo)
+     ,.mem_resp_ready_and_i(mem_resp_ready_and_lo)
 
      ,.cache_pkt_o(cache_pkt_li)
      ,.cache_pkt_v_o(cache_pkt_v_li)

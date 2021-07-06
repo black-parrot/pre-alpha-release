@@ -37,14 +37,14 @@ module bp_uce
 
     // Block size parameterisations -
     , localparam bp_bedrock_msg_size_e block_msg_size_lp = (block_width_p == 512)
-                                                      ? e_bedrock_msg_size_64
-                                                      : (block_width_p == 256)
-                                                        ? e_bedrock_msg_size_32
-                                                        : (block_width_p == 128)
-                                                          ? e_bedrock_msg_size_16
-                                                          : (block_width_p == 64)
-                                                            ? e_bedrock_msg_size_8
-                                                            : e_bedrock_msg_size_64
+                                                           ? e_bedrock_msg_size_64
+                                                           : (block_width_p == 256)
+                                                             ? e_bedrock_msg_size_32
+                                                             : (block_width_p == 128)
+                                                               ? e_bedrock_msg_size_16
+                                                               : (block_width_p == 64)
+                                                                 ? e_bedrock_msg_size_8
+                                                                 : e_bedrock_msg_size_64
     )
    (input                                            clk_i
     , input                                          reset_i
@@ -246,6 +246,7 @@ module bp_uce
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.mem_stream_mask_p(mem_cmd_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_cmd_payload_mask_gp)
      )
    uce_pump_out
     (.clk_i(clk_i)
@@ -276,6 +277,7 @@ module bp_uce
      ,.stream_data_width_p(fill_width_p)
      ,.block_width_p(block_width_p)
      ,.mem_stream_mask_p(mem_resp_payload_mask_gp)
+     ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
      )
    uce_pump_in
     (.clk_i(clk_i)
