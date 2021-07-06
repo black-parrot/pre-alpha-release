@@ -122,16 +122,18 @@ module bp_me_stream_pump_in
     end
   else
     begin: sub_block_stream
-      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt;
+      logic [data_len_width_lp-1:0] first_cnt, last_cnt, current_cnt, stream_cnt, cnt_val_li;
+      wire cnt_set = (any_stream_new & cnt_up) | stream_done_o;
+      wire cnt_en = (cnt_up | stream_done_o);
       bsg_counter_set_en
        #(.max_val_p(stream_words_lp-1), .reset_val_p(0))
        data_counter
         (.clk_i(clk_i)
         ,.reset_i(reset_i)
 
-        ,.set_i(any_stream_new & cnt_up)
-        ,.en_i(cnt_up | stream_done_o)
-        ,.val_i(first_cnt + cnt_up)
+        ,.set_i(cnt_set)
+        ,.en_i(cnt_en)
+        ,.val_i(cnt_val_li)
         ,.count_o(current_cnt)
         );
 
@@ -165,6 +167,7 @@ module bp_me_stream_pump_in
 
           stream_cnt = any_stream_new ? first_cnt : current_cnt;
           is_last_cnt = (stream_cnt == last_cnt) | (~is_fsm_stream & ~is_mem_stream);
+          cnt_val_li = stream_done_o ? '0 : (first_cnt + cnt_up);
         end
 
       // Generate proper wrap-around address for different incoming msg size dynamically.
