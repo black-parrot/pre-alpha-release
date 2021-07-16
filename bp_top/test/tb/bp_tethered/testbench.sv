@@ -588,20 +588,16 @@ module testbench
               ,.lce_cmd_data_ready_and_i(lce_cmd_data_ready_and_i)
 
               // CCE-MEM Interface
-              // BedRock Burst protocol: ready&valid
+              // BedRock Stream protocol: ready&valid
               ,.mem_resp_header_i(mem_resp_header_i)
-              ,.mem_resp_header_v_i(mem_resp_header_v_i)
-              ,.mem_resp_header_ready_and_i(mem_resp_header_ready_and_o)
               ,.mem_resp_data_i(mem_resp_data_i)
-              ,.mem_resp_data_v_i(mem_resp_data_v_i)
-              ,.mem_resp_data_ready_and_i(mem_resp_data_ready_and_o)
+              ,.mem_resp_v_i(mem_resp_v_i)
+              ,.mem_resp_ready_and_i(mem_resp_ready_and_o)
 
               ,.mem_cmd_header_i(mem_cmd_header_o)
-              ,.mem_cmd_header_v_i(mem_cmd_header_v_o)
-              ,.mem_cmd_header_ready_and_i(mem_cmd_header_ready_and_i)
               ,.mem_cmd_data_i(mem_cmd_data_o)
-              ,.mem_cmd_data_v_i(mem_cmd_data_v_o)
-              ,.mem_cmd_data_ready_and_i(mem_cmd_data_ready_and_i)
+              ,.mem_cmd_v_i(mem_cmd_v_o)
+              ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
               );
 
           bind bp_lce

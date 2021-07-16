@@ -298,6 +298,7 @@ module bp_uce
      ,.fsm_yumi_i(fsm_resp_yumi_lo)
      ,.fsm_new_o(fsm_resp_new)
      ,.fsm_done_o(fsm_resp_done)
+     ,.fsm_last_o(/* unused */)
      );
 
   // We check for uncached stores ealier than other requests, because they get sent out in ready

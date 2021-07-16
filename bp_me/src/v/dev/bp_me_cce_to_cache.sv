@@ -123,6 +123,7 @@ module bp_me_cce_to_cache
      ,.fsm_yumi_i(mem_cmd_yumi_li)
      ,.fsm_new_o(mem_cmd_new_lo)
      ,.fsm_done_o(mem_cmd_done_lo)
+     ,.fsm_last_o(/* unused */)
      );
 
   bp_local_addr_s local_addr_cast;

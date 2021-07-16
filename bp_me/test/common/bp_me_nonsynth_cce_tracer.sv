@@ -58,20 +58,16 @@ module bp_me_nonsynth_cce_tracer
    , input                                          lce_cmd_data_ready_and_i
 
    // CCE-MEM Interface
-   // BedRock Burst protocol: ready&valid
+   // BedRock Stream protocol: ready&valid
    , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
-   , input                                          mem_resp_header_v_i
-   , input                                          mem_resp_header_ready_and_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
-   , input                                          mem_resp_data_v_i
-   , input                                          mem_resp_data_ready_and_i
+   , input                                          mem_resp_v_i
+   , input                                          mem_resp_ready_and_i
 
    , input [cce_mem_msg_header_width_lp-1:0]        mem_cmd_header_i
-   , input                                          mem_cmd_header_v_i
-   , input                                          mem_cmd_header_ready_and_i
    , input [dword_width_gp-1:0]                     mem_cmd_data_i
-   , input                                          mem_cmd_data_v_i
-   , input                                          mem_cmd_data_ready_and_i
+   , input                                          mem_cmd_v_i
+   , input                                          mem_cmd_ready_and_i
 
    , input [cce_id_width_p-1:0]                     cce_id_i
   );
@@ -79,8 +75,7 @@ module bp_me_nonsynth_cce_tracer
   wire unused = &{lce_req_data_i, lce_req_data_v_i, lce_req_data_ready_and_i
                   , lce_resp_data_i, lce_resp_data_v_i, lce_req_data_ready_and_i
                   , lce_cmd_data_i, lce_cmd_data_v_i, lce_cmd_data_ready_and_i
-                  , mem_cmd_data_i, mem_cmd_data_v_i, mem_cmd_data_ready_and_i
-                  , mem_resp_data_i, mem_resp_data_v_i, mem_resp_data_ready_and_i};
+                  , mem_cmd_data_i, mem_resp_data_i};
 
   // LCE-CCE and Mem-CCE Interface
   `declare_bp_bedrock_lce_if(paddr_width_p, cce_block_width_p, lce_id_width_p, cce_id_width_p, lce_assoc_p, lce);
@@ -171,7 +166,7 @@ module bp_me_nonsynth_cce_tracer
         // TODO: data
         end
       end
-      if (mem_resp_header_v_i & mem_resp_header_ready_and_i) begin
+      if (mem_resp_v_i & mem_resp_ready_and_i) begin
         if (mem_resp.msg_type.mem == e_bedrock_mem_wr | mem_resp.msg_type.mem == e_bedrock_mem_uc_wr) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM RESP wb[%0b] uc[%0b] addr[%H] wg[%0d] lce[%0d] way[%0d]"
                  , $time, cce_id_i, (mem_resp.msg_type.mem == e_bedrock_mem_wr)
@@ -221,7 +216,7 @@ module bp_me_nonsynth_cce_tracer
                  );
         end
       end
-      if (mem_cmd_header_v_i & mem_cmd_header_ready_and_i) begin
+      if (mem_cmd_v_i & mem_cmd_ready_and_i) begin
         if (mem_cmd.msg_type.mem == e_bedrock_mem_rd | mem_cmd.msg_type.mem == e_bedrock_mem_uc_rd) begin
         $fdisplay(file, "[%t]: CCE[%0d] MEM CMD addr[%H] wg[%0d] lce[%0d] way[%0d] spec[%0b] uc[%0b]"
                  , $time, cce_id_i, mem_cmd.addr

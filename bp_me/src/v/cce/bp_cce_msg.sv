@@ -78,24 +78,17 @@ module bp_cce_msg
    , output logic                                   lce_cmd_last_o
 
    // CCE-MEM Interface
-   // BedRock Burst protocol: ready&valid
-   // inbound headers use valid->yumi
+   // BedRock Stream protocol: ready&valid
    , input [cce_mem_msg_header_width_lp-1:0]        mem_resp_header_i
-   , input                                          mem_resp_header_v_i
-   , output logic                                   mem_resp_header_yumi_o
-   , input                                          mem_resp_has_data_i
    , input [dword_width_gp-1:0]                     mem_resp_data_i
-   , input                                          mem_resp_data_v_i
-   , output logic                                   mem_resp_data_ready_and_o
+   , input                                          mem_resp_v_i
+   , output logic                                   mem_resp_ready_and_o
    , input                                          mem_resp_last_i
 
    , output logic [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_o
-   , output logic                                   mem_cmd_header_v_o
-   , input                                          mem_cmd_header_ready_and_i
-   , output logic                                   mem_cmd_has_data_o
    , output logic [dword_width_gp-1:0]              mem_cmd_data_o
-   , output logic                                   mem_cmd_data_v_o
-   , input                                          mem_cmd_data_ready_and_i
+   , output logic                                   mem_cmd_v_o
+   , input                                          mem_cmd_ready_and_i
    , output logic                                   mem_cmd_last_o
 
    // Input signals to feed output commands
@@ -183,6 +176,23 @@ module bp_cce_msg
   // MSHR casting
   bp_cce_mshr_s mshr;
   assign mshr = mshr_i;
+
+  // memory response buffer
+  logic mem_resp_v, mem_resp_yumi;
+  logic mem_resp_has_data;
+  bsg_two_fifo
+    #(.width_p(cce_mem_msg_header_width_lp+1))
+    mem_resp_buffer
+     (.clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.ready_o(mem_resp_header_ready_and_o)
+      ,.data_i({mem_resp_has_data_i, mem_resp_header_i})
+      ,.v_i(mem_resp_header_v_i)
+      ,.v_o(mem_resp_v)
+      ,.data_o({mem_resp_has_data, mem_resp})
+      ,.yumi_i(mem_resp_yumi)
+      );
+
 
   // Cache block aligned address mask
   // TODO: should CCE ever align the address?
