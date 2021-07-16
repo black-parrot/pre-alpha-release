@@ -224,32 +224,12 @@ module bp_cce_fsm
       ,.fsm_done_o(mem_cmd_stream_done_li)
       );
 
-  // Memory response data packets
-  wire [counter_width_lp-1:0] mem_resp_size_in_packets =
-    (mem_resp_base_header_li.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
-    ? counter_width_lp'((1 << mem_resp_base_header_li.size) >> lg_dword_width_bytes_lp)
-    : 'd1;
-
-  // LCE request data packets
-  wire [counter_width_lp-1:0] lce_req_size_in_packets =
-    (lce_req.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
-    ? counter_width_lp'((1 << lce_req.size) >> lg_dword_width_bytes_lp)
-    : 'd1;
-
-  // LCE response data packets
-  wire [counter_width_lp-1:0] lce_resp_size_in_packets =
-    (lce_resp.size > bp_bedrock_msg_size_e'(lg_dword_width_bytes_lp))
-    ? counter_width_lp'((1 << lce_resp.size) >> lg_dword_width_bytes_lp)
-    : 'd1;
-
   // Config bus
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
   bp_cfg_bus_s cfg_bus_cast_i;
   assign cfg_bus_cast_i = cfg_bus_i;
   wire cce_normal_mode_li = (cfg_bus_cast_i.cce_mode == e_cce_mode_normal);
   logic cce_normal_mode_r, cce_normal_mode_n;
-
-  // CCE FSM
 
   // MSHR
   `declare_bp_cce_mshr_s(lce_id_width_p, lce_assoc_p, paddr_width_p);

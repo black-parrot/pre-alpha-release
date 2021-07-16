@@ -560,7 +560,6 @@ module testbench
              cce_tracer
               (.clk_i(clk_i & testbench.cce_trace_en_lo)
               ,.reset_i(reset_i)
-              ,.freeze_i(cfg_bus_cast_i.freeze)
 
               ,.cce_id_i(cfg_bus_cast_i.cce_id)
 

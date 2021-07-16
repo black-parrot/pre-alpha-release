@@ -32,7 +32,6 @@ module bp_me_nonsynth_cce_tracer
   )
   (input                                            clk_i
    , input                                          reset_i
-   , input                                          freeze_i
 
    // LCE-CCE Interface
    // BedRock Burst protocol: ready&valid
