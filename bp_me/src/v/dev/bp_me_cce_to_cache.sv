@@ -6,7 +6,7 @@
                     -----------------------------------------
       mem_cmd_i -->| --> pump_in --->  cache_pkt_sel --->    |--> cache_pkt_p
                    |                       |                 |
-  (mem_data_width) |   (mem_data_width)    | (l2_data_width) |  (l2_data_width)
+   (l2_data_width) |   (l2_data_width)     | (l2_data_width) |  (l2_data_width)
                    |                       |                 |
      mem_resp_o <--| <-- pump_out <--  bsg_bus_pack <----    |<-- data_i
                     -----------------------------------------
@@ -40,7 +40,7 @@ module bp_me_cce_to_cache
     input clk_i
     , input reset_i
 
-    // Stream interface
+    // BedRock Stream interface
     , input  [cce_mem_msg_header_width_lp-1:0] mem_cmd_header_i
     , input  [l2_data_width_p-1:0]             mem_cmd_data_i
     , input                                    mem_cmd_v_i

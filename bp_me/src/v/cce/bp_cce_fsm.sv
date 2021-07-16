@@ -947,7 +947,7 @@ module bp_cce_fsm
         // send data
         // last send occurs when cnt is one
         lce_cmd_busy = 1'b1;
-        lce_cmd_data_o = mem_resp_data_i;
+        lce_cmd_data_o = mem_resp_data_li;
         lce_cmd_data_v_o = mem_resp_v_li;
         lce_cmd_last_o = mem_resp_stream_last_li;
         // consume beat when data sends on LCE command
