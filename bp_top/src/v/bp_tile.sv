@@ -441,7 +441,7 @@ module bp_tile
   // CCE-side CCE-Mem network connections
   bp_bedrock_cce_mem_msg_header_s cce_mem_cmd_header_lo;
   logic [dword_width_gp-1:0] cce_mem_cmd_data_lo;
-  logic cce_mem_cmd_v_lo, cce_mem_cmd_ready_and_li, cce_mem_cmd_last_lo;
+  logic cce_mem_cmd_v_lo, cce_mem_cmd_last_lo, cce_mem_cmd_yumi_li;
   bp_bedrock_cce_mem_msg_header_s cce_mem_resp_header_li;
   logic [dword_width_gp-1:0] cce_mem_resp_data_li;
   logic cce_mem_resp_v_li, cce_mem_resp_ready_and_lo, cce_mem_resp_last_li;
@@ -650,7 +650,8 @@ module bp_tile
      ,.mem_cmd_header_o(cce_mem_cmd_header_lo)
      ,.mem_cmd_data_o(cce_mem_cmd_data_lo)
      ,.mem_cmd_v_o(cce_mem_cmd_v_lo)
-     ,.mem_cmd_ready_and_i(cce_mem_cmd_ready_and_li)
+     // TODO: should this be fixed?
+     ,.mem_cmd_ready_and_i(cce_mem_cmd_yumi_li)
      ,.mem_cmd_last_o(cce_mem_cmd_last_lo)
      );
 
