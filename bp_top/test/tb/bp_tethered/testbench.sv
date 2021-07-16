@@ -593,11 +593,13 @@ module testbench
               ,.mem_resp_data_i(mem_resp_data_i)
               ,.mem_resp_v_i(mem_resp_v_i)
               ,.mem_resp_ready_and_i(mem_resp_ready_and_o)
+              ,.mem_resp_last_i(mem_resp_last_i)
 
               ,.mem_cmd_header_i(mem_cmd_header_o)
               ,.mem_cmd_data_i(mem_cmd_data_o)
               ,.mem_cmd_v_i(mem_cmd_v_o)
               ,.mem_cmd_ready_and_i(mem_cmd_ready_and_i)
+              ,.mem_cmd_last_i(mem_cmd_last_o)
               );
 
           bind bp_lce
