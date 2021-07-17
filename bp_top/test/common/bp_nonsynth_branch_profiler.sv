@@ -24,12 +24,12 @@ module bp_nonsynth_branch_profiler
     );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p, ras_idx_width_p, vaddr_width_p);
   bp_fe_cmd_s fe_cmd;
   bp_fe_branch_metadata_fwd_s branch_metadata;
   assign fe_cmd = fe_cmd_o;
 
-  wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection);
+  wire pc_redirect_v    = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_pc_redirection) & (fe_cmd.operands.pc_redirect_operands.subopcode == e_subop_branch_mispredict);
   wire attaboy_v        = fe_cmd_yumi_i & (fe_cmd.opcode == e_op_attaboy);
 
   assign branch_metadata = pc_redirect_v
@@ -45,8 +45,9 @@ module bp_nonsynth_branch_profiler
   integer br_cnt;
   integer jal_cnt;
   integer jalr_cnt;
+  integer ret_cnt;
   integer btb_hit_cnt;
-  integer ras_hit_cnt;
+  integer ret_hit_cnt;
   integer bht_hit_cnt;
 
   integer file;
@@ -67,9 +68,10 @@ module bp_nonsynth_branch_profiler
         br_cnt       <= 0;
         jal_cnt      <= 0;
         jalr_cnt     <= 0;
+        ret_cnt      <= 0;
         btb_hit_cnt  <= 0;
-        ras_hit_cnt  <= 0;
         bht_hit_cnt  <= 0;
+        ret_hit_cnt  <= 0;
       end
     else
       begin
@@ -81,10 +83,11 @@ module bp_nonsynth_branch_profiler
             br_cnt      <= br_cnt + branch_metadata.is_br;
             jal_cnt     <= jal_cnt + branch_metadata.is_jal;
             jalr_cnt    <= jalr_cnt + branch_metadata.is_jalr;
+            ret_cnt     <= ret_cnt + branch_metadata.is_ret;
 
             btb_hit_cnt <= btb_hit_cnt + branch_metadata.src_btb;
-            ras_hit_cnt <= ras_hit_cnt + branch_metadata.src_ret;
             bht_hit_cnt <= bht_hit_cnt + branch_metadata.is_br;
+            ret_hit_cnt <= ret_hit_cnt + branch_metadata.is_ret;
 
             if (branch_histo.exists(fe_cmd.vaddr))
               begin
@@ -102,6 +105,7 @@ module bp_nonsynth_branch_profiler
             br_cnt   <= br_cnt + branch_metadata.is_br;
             jal_cnt  <= jal_cnt + branch_metadata.is_jal;
             jalr_cnt <= jalr_cnt + branch_metadata.is_jalr;
+            ret_cnt  <= ret_cnt + branch_metadata.is_ret;
 
             if (branch_histo.exists(fe_cmd.vaddr))
               begin
@@ -119,9 +123,10 @@ module bp_nonsynth_branch_profiler
   final
     begin
       $fwrite(file, "Branch statistics\n");
-      $fwrite(file, "MPKI: %d\n", redirect_cnt / (instr_cnt / 1000));
-      $fwrite(file, "BTB hit%%: %d\n", (btb_hit_cnt * 100) / (attaboy_cnt + redirect_cnt));
-      $fwrite(file, "BHT hit%%: %d\n", (bht_hit_cnt * 100) / (br_cnt));
+      $fwrite(file, "MPKI: \t\t%.2f\n", redirect_cnt / (instr_cnt / 1000.0));
+      $fwrite(file, "BTB hit%%: \t%.2f (%d / %d)\n", (btb_hit_cnt * 100.0) / (attaboy_cnt + redirect_cnt), btb_hit_cnt, attaboy_cnt + redirect_cnt);
+      $fwrite(file, "BHT hit%%: \t%.2f (%d / %d)\n", (bht_hit_cnt * 100.0) / (br_cnt),                     bht_hit_cnt, br_cnt);
+      $fwrite(file, "ret hit%%: \t%.2f (%d / %d)\n", (ret_hit_cnt * 100.0) / (ret_cnt),                    ret_hit_cnt, ret_cnt);
       $fwrite(file, "==================================== Branches ======================================\n");
       $fwrite(file, "[target\t]\t\toccurances\t\tmisses\t\tmiss%%]\n");
       foreach (branch_histo[key])

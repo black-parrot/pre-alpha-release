@@ -96,6 +96,7 @@
     integer unsigned bht_idx_width;
     integer unsigned bht_row_els;
     integer unsigned ghist_width;
+    integer unsigned ras_idx_width;
 
     // Capacity of the Instruction/Data TLBs
     integer unsigned itlb_els_4k;
@@ -221,12 +222,13 @@
       ,boot_pc       : dram_base_addr_gp
       ,boot_in_debug : 0
 
-      ,branch_metadata_fwd_width: 36
+      ,branch_metadata_fwd_width: 38
       ,btb_tag_width            : 9
       ,btb_idx_width            : 6
       ,bht_idx_width            : 8
       ,bht_row_els              : 2
       ,ghist_width              : 2
+      ,ras_idx_width            : 2
 
       ,itlb_els_4k : 8
       ,dtlb_els_4k : 8
@@ -820,6 +822,7 @@
       ,`bp_aviary_define_override(bht_idx_width, BP_BHT_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(bht_row_els, BP_BHT_ROW_ELS, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(ghist_width, BP_GHIST_WIDTH, `BP_CUSTOM_BASE_CFG)
+      ,`bp_aviary_define_override(ras_idx_width, BP_RAS_IDX_WIDTH, `BP_CUSTOM_BASE_CFG)
 
       ,`bp_aviary_define_override(itlb_els_4k, BP_ITLB_ELS_4K, `BP_CUSTOM_BASE_CFG)
       ,`bp_aviary_define_override(itlb_els_1g, BP_ITLB_ELS_1G, `BP_CUSTOM_BASE_CFG)

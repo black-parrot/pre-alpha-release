@@ -49,7 +49,7 @@ module bp_fe_pc_gen
    );
 
   `declare_bp_core_if(vaddr_width_p, paddr_width_p, asid_width_p, branch_metadata_fwd_width_p);
-  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p);
+  `declare_bp_fe_branch_metadata_fwd_s(btb_tag_width_p, btb_idx_width_p, bht_idx_width_p, ghist_width_p, bht_row_width_p, ras_idx_width_p, vaddr_width_p);
   `declare_bp_fe_pc_gen_stage_s(vaddr_width_p, ghist_width_p, bht_row_width_p);
 
   bp_fe_branch_metadata_fwd_s redirect_br_metadata_fwd;
@@ -188,18 +188,34 @@ module bp_fe_pc_gen
   assign btb_taken = btb_br_tgt_v_lo & (bht_pred_lo | btb_br_tgt_jmp_lo);
 
   // RAS
-  logic [vaddr_width_p-1:0] return_addr_n, return_addr_r;
-  bsg_dff_reset_en
-   #(.width_p(vaddr_width_p))
-   ras
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-     ,.en_i(is_call)
+  logic [vaddr_width_p-1:0] ras_next_instruction_addr_li, ras_pred_tgt_pc_lo;
+  logic [ras_idx_width_p-1:0] ras_ckpt_top_ptr_lo;
+  logic ras_init_done_lo;
 
-     ,.data_i(return_addr_n)
-     ,.data_o(return_addr_r)
+  wire ras_pred_tgt_pc_pop_en_li = is_ret;
+
+  bp_fe_ras
+   #(.bp_params_p(bp_params_p))
+   ras
+    (.clk_i        (clk_i)
+     ,.reset_i     (reset_i)
+
+     ,.init_done_o(ras_init_done_lo)
+
+     // if currently redirecting, the checkpoint restore will trump a push or pop
+     ,.push_pc_en_i (is_call)
+     ,.push_pc_i    (ras_next_instruction_addr_li)
+
+     ,.pop_pc_en_i  (ras_pred_tgt_pc_pop_en_li)
+     ,.pop_pc_o     (ras_pred_tgt_pc_lo)
+
+     ,.ckpt_top_ptr_o(ras_ckpt_top_ptr_lo)
+
+     ,.restore_ckpt_v_i(redirect_br_v_i)
+     ,.restore_ckpt_top_ptr_i(redirect_br_metadata_fwd.ras_top_ptr)
      );
-  assign ras_tgt_lo = return_addr_r;
+
+  assign ras_tgt_lo = ras_pred_tgt_pc_lo;
 
   assign attaboy_yumi_o = attaboy_v_i & ~(bht_w_v_li & ~bht_w_yumi_lo) & ~(btb_w_v_li & ~btb_w_yumi_lo);
 
@@ -230,7 +246,7 @@ module bp_fe_pc_gen
      ,.data_i({pred_if2_n, pc_if2_n})
      ,.data_o({pred_if2_r, pc_if2_r})
      );
-  assign return_addr_n = pc_if2_r + vaddr_width_p'(4);
+  assign ras_next_instruction_addr_li = pc_if2_r + vaddr_width_p'(4);
 
   wire btb_miss_ras = pc_if1_r != ras_tgt_lo;
   wire btb_miss_br  = pc_if1_r != br_tgt_lo;
@@ -252,6 +268,7 @@ module bp_fe_pc_gen
           ,btb_tag : pc_if2_r[2+btb_idx_width_p+:btb_tag_width_p]
           ,btb_idx : pc_if2_r[2+:btb_idx_width_p]
           ,bht_idx : pc_if2_r[2+:bht_idx_width_p]
+          ,ras_top_ptr : ras_ckpt_top_ptr_lo
           ,is_br   : is_br
           ,is_jal  : is_jal
           ,is_jalr : is_jalr
@@ -285,7 +302,7 @@ module bp_fe_pc_gen
      ,.data_o(ghistory_r)
      );
 
-  assign init_done_o = bht_init_done_lo & btb_init_done_lo;
+  assign init_done_o = bht_init_done_lo & btb_init_done_lo & ras_init_done_lo;
 
 endmodule
 
