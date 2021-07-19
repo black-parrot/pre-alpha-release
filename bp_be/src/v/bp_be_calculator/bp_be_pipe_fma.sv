@@ -9,8 +9,9 @@
  * Notes:
  *   This module relies on cross-boundary flattening and retiming to achieve
  *     good QoR
- *
- *   pipeline_p is used to insert pipelining registers in rawMul for some devices, 
+ *   
+ *   TODO remove this after bsg_mul_add
+ *   pipeline_stages_p is used to insert pipelining registers in rawMul for some devices, 
  *   where automatic backwards retiming from the retiming_chain doesn't help. 
  *     - No pipelining (default)   : '{0,0}
  *     - 64 bit, Zynq 7020 @ 50 MHz: '{1,2}
@@ -42,7 +43,7 @@ module bp_be_pipe_fma
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter int pipeline_p[0:1] = '{0,0}
+   , parameter pipeline_stages_p = 0, //default, no pipelining: 0; Zynq 7020 @ 50 MHz: 3
    , parameter imul_latency_p = "inv"
    , parameter fma_latency_p  = "inv"
 
@@ -134,7 +135,7 @@ module bp_be_pipe_fma
   mulAddRecFNToRaw
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
-     ,.pipeline(pipeline_p[0:1])
+     ,.pipelineStages(pipeline_stages_p)
      ,.imulEn(1)
      )
    fma
@@ -159,7 +160,7 @@ module bp_be_pipe_fma
   logic reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r;
   bsg_dff_chain
    #(.width_p($bits({reservation.v, decode.pipe_mul_v, decode.opw_v}))
-     ,.num_stages_p(imul_latency_p-pipeline_p[0]-pipeline_p[1]))
+     ,.num_stages_p(imul_latency_p-pipeline_stages_p))
     shunt_imul
     (.clk_i(clk_i)
      ,.data_i({reservation.v, decode.pipe_mul_v, decode.opw_v})
@@ -169,7 +170,7 @@ module bp_be_pipe_fma
   logic reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r;
   bsg_dff_chain
    #(.width_p($bits({control_li, frm_li, reservation.v, decode.pipe_fma_v, decode.ops_v}))
-     ,.num_stages_p(fma_latency_p-pipeline_p[0]-pipeline_p[1]))
+     ,.num_stages_p(fma_latency_p-pipeline_stages_p))
     shunt_fma
     (.clk_i(clk_i)
      ,.data_i({control_li, frm_li, reservation.v, decode.pipe_fma_v, decode.ops_v})
@@ -243,7 +244,7 @@ module bp_be_pipe_fma
 
   bsg_dff_chain
    #(.width_p(1+dpath_width_gp) 
-     ,.num_stages_p(imul_latency_p-pipeline_p[0]-pipeline_p[1]))
+     ,.num_stages_p(imul_latency_p-pipeline_stages_p))
    imul_retiming_chain
     (.clk_i(clk_i)
 
@@ -254,7 +255,7 @@ module bp_be_pipe_fma
   wire fma_v_li = reservation_v_fma_r & decode_pipe_fma_v_r;
   bsg_dff_chain
    #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s))
-     ,.num_stages_p(fma_latency_p-pipeline_p[0]-pipeline_p[1]))
+     ,.num_stages_p(fma_latency_p-pipeline_stages_p))
    fma_retiming_chain
     (.clk_i(clk_i)
 
