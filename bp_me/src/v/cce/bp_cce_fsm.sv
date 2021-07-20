@@ -56,8 +56,8 @@ module bp_cce_fsm
     , localparam lg_dword_width_bytes_lp = `BSG_SAFE_CLOG2(dword_width_gp/8)
 
     // stream pump
-   , localparam stream_words_lp = cce_block_width_p / dword_width_gp
-   , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
+    , localparam stream_words_lp = cce_block_width_p / dword_width_gp
+    , localparam data_len_width_lp = `BSG_SAFE_CLOG2(stream_words_lp)
   )
   (input                                            clk_i
    , input                                          reset_i
@@ -906,7 +906,6 @@ module bp_cce_fsm
             pending_w_v = mem_resp_yumi_lo & cce_normal_mode_r & resp_pma_cacheable_addr_lo;
             pending_w_addr = mem_resp_base_header_li.addr;
             pending_li = 1'b0;
-
 
           end // uc_wr
 
