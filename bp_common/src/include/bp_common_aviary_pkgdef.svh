@@ -798,16 +798,6 @@
                         ,bp_multicore_1_cfg_p
                         );
 
-  // TODO: CCE testing configs
-  localparam bp_proc_param_s bp_multicore_test_4_override_p =
-    '{num_cce  : 1
-      ,default : "inv"
-      };
-  `bp_aviary_derive_cfg(bp_multicore_test_4_cfg_p
-                        ,bp_multicore_test_4_override_p
-                        ,bp_multicore_2_cfg_p
-                        );
-
   localparam bp_proc_param_s bp_multicore_cce_ucode_half_override_p =
     '{num_lce  : 1
       ,default : "inv"
