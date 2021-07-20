@@ -333,6 +333,8 @@ module testbench
            ,.frd_w_v_i(scheduler.fwb_pkt_cast_i.frd_w_v)
            ,.frd_addr_i(scheduler.fwb_pkt_cast_i.rd_addr)
            ,.frd_data_i(scheduler.fwb_pkt_cast_i.rd_data)
+
+           ,.dcache_v(calculator.pipe_mem.dcache.early_v_o)
            );
 
       bind bp_be_dcache
