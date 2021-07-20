@@ -51,6 +51,9 @@ module bp_me_xbar_burst
 
   `declare_bp_bedrock_if(paddr_width_p, payload_width_p, data_width_p, lce_id_width_p, lce_assoc_p, xbar);
 
+  // register to indicate ready to send data
+  logic send_data_r;
+
   // msg arbitration logic
   // request arbitration lock on header valid (regardless of whether message has data)
   // unlock on header ack (no data) or last data ack
@@ -77,7 +80,6 @@ module bp_me_xbar_burst
      ,.v_o(msg_grants_v_li)
      );
 
-  logic send_data_r;
   bsg_dff_reset_set_clear
    #(.width_p(1)
      ,.clear_over_set_p(1)
@@ -126,7 +128,7 @@ module bp_me_xbar_burst
   assign msg_header_yumi_o   = msg_grants_lo & {num_source_p{|{msg_header_v_o & msg_header_ready_and_i}}};
   assign msg_has_data_o      = msg_header_v_o & {num_sink_p{msg_has_data_i[msg_grants_sel_li]}};
   // output valid data after header sends
-  assign msg_data_v_o        = msg_grants_v_li ? {num_sink_p{send_data_r}} & (1'b1 << msg_dst_r[msg_grants_sel_li]) : '0;
+  assign msg_data_v_o        = msg_grants_v_li ? {num_sink_p{send_data_r}} & (1'b1 << msg_dst_r) : '0;
   assign msg_data_yumi_o     = msg_grants_lo & {num_source_p{|{msg_data_v_o & msg_data_ready_and_i}}};
   assign msg_last_o          = msg_data_v_o & {num_sink_p{msg_last_i[msg_grants_sel_li]}};
 
