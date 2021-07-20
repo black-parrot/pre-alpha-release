@@ -63,7 +63,7 @@ module bp_me_xbar_burst
      ,.ready_i(1'b1)
 
      ,.unlock_i(msg_arb_unlock_li)
-     ,.reqs_i(msg_header_v_i)
+     ,.reqs_i(msg_header_v_i | ({num_source_p{send_data_r}} & msg_data_v_i))
      ,.grants_o(msg_grants_lo)
      );
 
