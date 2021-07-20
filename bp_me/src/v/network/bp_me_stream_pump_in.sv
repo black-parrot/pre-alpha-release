@@ -42,6 +42,8 @@ module bp_me_stream_pump_in
    , parameter msg_stream_mask_p = 0
    , parameter fsm_stream_mask_p = msg_stream_mask_p
 
+   , parameter buffer_els_p = 2
+
    `declare_bp_bedrock_if_widths(paddr_width_p, payload_width_p, stream_data_width_p, lce_id_width_p, lce_assoc_p, xce)
 
    , localparam block_offset_width_lp = `BSG_SAFE_CLOG2(block_width_p >> 3)
@@ -83,8 +85,10 @@ module bp_me_stream_pump_in
   logic [stream_data_width_p-1:0] msg_data_lo;
   logic msg_v_lo, msg_yumi_li, msg_last_lo;
 
-  bsg_two_fifo
-   #(.width_p($bits(bp_bedrock_xce_msg_s)+1))
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(bp_bedrock_xce_msg_s)+1)
+     ,.els_p(buffer_els_p)
+     )
    input_fifo
     (.clk_i(clk_i)
       ,.reset_i(reset_i)

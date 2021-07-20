@@ -169,6 +169,8 @@ module bp_cce_fsm
       ,.payload_width_p(cce_mem_payload_width_lp)
       ,.msg_stream_mask_p(mem_resp_payload_mask_gp)
       ,.fsm_stream_mask_p(mem_resp_payload_mask_gp)
+      // provide buffer space for two 8-beat long data carrying messages
+      ,.buffer_els_p(16)
       )
     mem_resp_stream_pump
      (.clk_i(clk_i)
