@@ -10,28 +10,27 @@
  *   This module relies on cross-boundary flattening and retiming to achieve
  *     good QoR
  *   
- *   TODO remove this after bsg_mul_add
  *   pipeline_stages_p is used to insert pipelining registers in rawMul for some devices, 
  *   where automatic backwards retiming from the retiming_chain doesn't help. 
  *     - No pipelining (default)   : '{0,0}
- *     - 64 bit, Zynq 7020 @ 50 MHz: '{1,2}
+ *     - 64 bit, Zynq 7020 @ 50 MHz: '{3,1} (distributed as in the below figure)
  *
  *   This module:
  *            ...
- *            fma        -> takes pipeline_p
+ *            fma         -> takes pipeline_p[0]
  *           /   \
- *      round_*p  \      -> ideally, some x should cross here
- *      (shunt) (shunt)
- *         x       y     -> remaining pipeline (retiming_chain)
- *         |       |
- *     fma_out  imul_out
+ *     pre_round  \       -> takes pipeline_p[1]
+ *      round_*p   \      -> ideally, some x should cross here
+ *         |        |
+ *         x        y     -> remaining pipeline (retiming_chain)
+ *     fma_out   imul_out
  *
- *   fma:
+ *   fma: (internally)
  *         preMul
  *          /  \
- *         0    0        -> pipeline_p[0]
+ *         0    0        -> 1 pipeline stage
  *         | (mulAdd)    -> Integer MulAdd (uses DSP on Zynq 7020)
- *         1    1        -> pipeline_p[1]
+ *         1    1        -> 2 pipeline stages
  *          \  /
  *         postMul
  */
@@ -43,7 +42,7 @@ module bp_be_pipe_fma
  import bp_be_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   , parameter pipeline_stages_p = 0, //default, no pipelining: 0; Zynq 7020 @ 50 MHz: 3
+   , parameter int pipeline_stages_p[0:1] = {0,0},
    , parameter imul_latency_p = "inv"
    , parameter fma_latency_p  = "inv"
 
@@ -132,10 +131,15 @@ module bp_be_pipe_fma
   logic [dp_sig_width_gp+2:0] fma_out_sig;
   logic [dword_width_gp-1:0] imul_out;
 
+  logic invalid_exc_r, is_nan_r, is_inf_r, is_zero_r;
+  logic fma_out_sign_r;
+  logic [dp_exp_width_gp+1:0] fma_out_sexp_r;
+  logic [dp_sig_width_gp+2:0] fma_out_sig_r;
+
   mulAddRecFNToRaw
    #(.expWidth(dp_exp_width_gp)
      ,.sigWidth(dp_sig_width_gp)
-     ,.pipelineStages(pipeline_stages_p)
+     ,.pipelineStages(pipeline_stages_p[0])
      ,.imulEn(1)
      )
    fma
@@ -158,23 +162,34 @@ module bp_be_pipe_fma
      );
 
   logic reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r;
+
   bsg_dff_chain
-   #(.width_p($bits({reservation.v, decode.pipe_mul_v, decode.opw_v}))
-     ,.num_stages_p(imul_latency_p-pipeline_stages_p))
-    shunt_imul
+   #(.width_p($bits({control_li, frm_li, reservation.v, decode.pipe_mul_v, decode.opw_v}))
+     ,.num_stages_p(pipeline_stages_p[0]))
+    imul_shunt
     (.clk_i(clk_i)
-     ,.data_i({reservation.v, decode.pipe_mul_v, decode.opw_v})
-     ,.data_o({reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r})
+     ,.data_i({control_li, frm_li, reservation.v, decode.pipe_mul_v, decode.opw_v})
+     ,.data_o({control_r, frm_r, reservation_v_imul_r, decode_pipe_mul_v_r, decode_opw_v_r})
     );
 
   logic reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r;
+
   bsg_dff_chain
-   #(.width_p($bits({control_li, frm_li, reservation.v, decode.pipe_fma_v, decode.ops_v}))
-     ,.num_stages_p(fma_latency_p-pipeline_stages_p))
-    shunt_fma
+   #(.width_p($bits({reservation.v, decode.pipe_fma_v, decode.ops_v}))
+     ,.num_stages_p(pipeline_stages_p[0]+pipeline_stages_p[1]))
+    fma_shunt
     (.clk_i(clk_i)
-     ,.data_i({control_li, frm_li, reservation.v, decode.pipe_fma_v, decode.ops_v})
-     ,.data_o({control_r, frm_r, reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r})
+     ,.data_i({reservation.v, decode.pipe_fma_v, decode.ops_v})
+     ,.data_o({reservation_v_fma_r, decode_pipe_fma_v_r, decode_ops_v_r})
+    );
+
+  bsg_dff_chain
+   #(.width_p($bits({invalid_exc, is_nan, is_inf, is_zero, fma_out_sign, fma_out_sexp, fma_out_sig}))
+     ,.num_stages_p(pipeline_stages_p[1]))
+   pre_round
+    (.clk_i(clk_i)
+     ,.data_i({invalid_exc, is_nan, is_inf, is_zero, fma_out_sign, fma_out_sexp, fma_out_sig})
+     ,.data_o({invalid_exc_r, is_nan_r, is_inf_r, is_zero_r, fma_out_sign_r, fma_out_sexp_r, fma_out_sig_r})
     );
 
   logic [dp_rec_width_gp-1:0] fma_dp_final;
@@ -186,15 +201,15 @@ module bp_be_pipe_fma
      ,.outSigWidth(dp_sig_width_gp)
      )
    round_dp
-    (.control(control_r) //constant?
-     ,.invalidExc(invalid_exc)
+    (.control(control_r) //constant; but nonetheless
+     ,.invalidExc(invalid_exc_r)
      ,.infiniteExc('0)
-     ,.in_isNaN(is_nan)
-     ,.in_isInf(is_inf)
-     ,.in_isZero(is_zero)
-     ,.in_sign(fma_out_sign)
-     ,.in_sExp(fma_out_sexp)
-     ,.in_sig(fma_out_sig)
+     ,.in_isNaN(is_nan_r)
+     ,.in_isInf(is_inf_r)
+     ,.in_isZero(is_zero_r)
+     ,.in_sign(fma_out_sign_r)
+     ,.in_sExp(fma_out_sexp_r)
+     ,.in_sig(fma_out_sig_r)
      ,.roundingMode(frm_r)
      ,.out(fma_dp_final)
      ,.exceptionFlags(fma_dp_fflags)
@@ -210,14 +225,14 @@ module bp_be_pipe_fma
      )
    round_sp
     (.control(control_r)
-     ,.invalidExc(invalid_exc)
+     ,.invalidExc(invalid_exc_r)
      ,.infiniteExc('0)
-     ,.in_isNaN(is_nan)
-     ,.in_isInf(is_inf)
-     ,.in_isZero(is_zero)
-     ,.in_sign(fma_out_sign)
-     ,.in_sExp(fma_out_sexp)
-     ,.in_sig(fma_out_sig)
+     ,.in_isNaN(is_nan_r)
+     ,.in_isInf(is_inf_r)
+     ,.in_isZero(is_zero_r)
+     ,.in_sign(fma_out_sign_r)
+     ,.in_sExp(fma_out_sexp_r)
+     ,.in_sig(fma_out_sig_r)
      ,.roundingMode(frm_r)
      ,.out(fma_sp_final)
      ,.exceptionFlags(fma_sp_fflags)
@@ -244,7 +259,7 @@ module bp_be_pipe_fma
 
   bsg_dff_chain
    #(.width_p(1+dpath_width_gp) 
-     ,.num_stages_p(imul_latency_p-pipeline_stages_p))
+     ,.num_stages_p(imul_latency_p-pipeline_stages_p[0]))
    imul_retiming_chain
     (.clk_i(clk_i)
 
@@ -255,7 +270,7 @@ module bp_be_pipe_fma
   wire fma_v_li = reservation_v_fma_r & decode_pipe_fma_v_r;
   bsg_dff_chain
    #(.width_p(1+$bits(bp_be_fp_reg_s)+$bits(rv64_fflags_s))
-     ,.num_stages_p(fma_latency_p-pipeline_stages_p))
+     ,.num_stages_p(fma_latency_p-pipeline_stages_p[0]-pipeline_stages_p[1]))
    fma_retiming_chain
     (.clk_i(clk_i)
 
