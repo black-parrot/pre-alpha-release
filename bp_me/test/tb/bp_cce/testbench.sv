@@ -812,6 +812,28 @@ module testbench
          ,.instruction_i(inst_decode.inst_r)
          ,.stall_i(stall_lo)
          );
+
+    bind bp_cce
+      bp_me_nonsynth_cce_perf
+        #(.bp_params_p(bp_params_p))
+        cce_perf
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.req_start_i('0)
+         ,.req_end_i('0)
+         ,.lce_req_header_i(lce_req)
+         ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+         ,.lce_cmd_header_i(lce_cmd)
+         ,.resp_receive_i(lce_resp_yumi)
+         ,.lce_resp_header_i(lce_resp)
+         ,.mem_resp_receive_i(mem_resp_stream_done_li)
+         ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
+         ,.mem_resp_header_i(mem_resp_base_header_li)
+         ,.mem_cmd_send_i(mem_cmd_stream_new_li)
+         ,.mem_cmd_header_i(mem_cmd_base_header_lo)
+         );
+
   end
   else begin
     bind bp_cce_fsm
@@ -828,11 +850,11 @@ module testbench
          ,.lce_cmd_header_i(lce_cmd)
          ,.resp_receive_i(lce_resp_yumi)
          ,.lce_resp_header_i(lce_resp)
-         ,.mem_resp_receive_i(mem_resp_yumi)
-         ,.mem_resp_squash_i(mem_resp_yumi & spec_bits_lo.squash)
-         ,.mem_resp_header_i(mem_resp)
-         ,.mem_cmd_send_i(mem_cmd_header_v_o & mem_cmd_header_ready_and_i)
-         ,.mem_cmd_header_i(mem_cmd)
+         ,.mem_resp_receive_i(mem_resp_stream_done_li)
+         ,.mem_resp_squash_i(mem_resp_yumi_lo & spec_bits_lo.squash & mem_resp_stream_last_li)
+         ,.mem_resp_header_i(mem_resp_base_header_li)
+         ,.mem_cmd_send_i(mem_cmd_stream_new_li)
+         ,.mem_cmd_header_i(mem_cmd_base_header_lo)
          );
   end
 
