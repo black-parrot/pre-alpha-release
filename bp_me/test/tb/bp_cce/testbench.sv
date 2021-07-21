@@ -696,6 +696,8 @@ module testbench
         ,.lce_cmd_o_i(lce_cmd_o)
         ,.lce_cmd_o_v_i(lce_cmd_v_o)
         ,.lce_cmd_o_ready_and_i(lce_cmd_ready_and_i)
+        ,.cache_req_complete_i(testbench.tr_v_li & testbench.tr_ready_lo)
+        ,.uc_store_req_complete_i('0)
         );
 
   bind bp_me_nonsynth_mock_lce
@@ -794,6 +796,47 @@ module testbench
         ,.addr_dst_gpr_o_i(addr_dst_gpr_o)
         );
 
+  // CCE instruction tracer
+  // this is connected to the instruction registered in the EX stage
+  if (cce_ucode_p) begin
+    bind bp_cce
+      bp_me_nonsynth_cce_inst_tracer
+        #(.bp_params_p(bp_params_p)
+          )
+        cce_inst_tracer
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.pc_i(inst_decode.ex_pc_r)
+         ,.instruction_v_i(inst_decode.inst_v_r)
+         ,.instruction_i(inst_decode.inst_r)
+         ,.stall_i(stall_lo)
+         );
+  end
+  else begin
+    bind bp_cce_fsm
+      bp_me_nonsynth_cce_perf
+        #(.bp_params_p(bp_params_p))
+        cce_perf
+        (.clk_i(clk_i & (testbench.cce_trace_p == 1))
+         ,.reset_i(reset_i)
+         ,.cce_id_i(cfg_bus_cast_i.cce_id)
+         ,.req_start_i(lce_req_v & (state_r == e_ready))
+         ,.req_end_i(state_r == e_ready)
+         ,.lce_req_header_i(lce_req)
+         ,.cmd_send_i(lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
+         ,.lce_cmd_header_i(lce_cmd)
+         ,.resp_receive_i(lce_resp_yumi)
+         ,.lce_resp_header_i(lce_resp)
+         ,.mem_resp_receive_i(mem_resp_yumi)
+         ,.mem_resp_squash_i(mem_resp_yumi & spec_bits_lo.squash)
+         ,.mem_resp_header_i(mem_resp)
+         ,.mem_cmd_send_i(mem_cmd_header_v_o & mem_cmd_header_ready_and_i)
+         ,.mem_cmd_header_i(mem_cmd)
+         );
+  end
+
+
   // Config
   bp_bedrock_cce_mem_msg_header_s cfg_mem_cmd_lo;
   logic [dword_width_gp-1:0] cfg_mem_cmd_data_lo;
@@ -809,7 +852,7 @@ module testbench
       ,.inst_ram_els_p(num_cce_instr_ram_els_p)
       ,.skip_ram_init_p(cce_mode_p)
       ,.clear_freeze_p(1'b1)
-    )
+      )
     cfg_loader
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
