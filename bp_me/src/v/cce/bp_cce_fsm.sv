@@ -118,11 +118,6 @@ module bp_cce_fsm
   bp_bedrock_lce_resp_msg_header_s lce_resp;
   bp_bedrock_lce_cmd_msg_header_s  lce_cmd;
   assign lce_cmd_header_o = lce_cmd;
-  bp_bedrock_lce_req_payload_s lce_req_payload;
-  bp_bedrock_lce_cmd_payload_s lce_cmd_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  assign lce_resp_payload = lce_resp.payload;
-  assign lce_req_payload = lce_req.payload;
 
   // lce request header buffer
   logic lce_req_v, lce_req_yumi;
@@ -648,8 +643,7 @@ module bp_cce_fsm
     lce_cmd_header_v_o = '0;
     lce_cmd_data_o = '0;
     lce_cmd_data_v_o = '0;
-    lce_cmd_payload = '0;
-    lce_cmd_payload.src_id = cfg_bus_cast_i.cce_id;
+    lce_cmd.payload.src_id = cfg_bus_cast_i.cce_id;
     lce_cmd_last_o = '0;
     lce_cmd_has_data_o = '0;
 
@@ -748,10 +742,9 @@ module bp_cce_fsm
 
               // command payload
               // modify the coherence state
-              lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-              lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-              lce_cmd_payload.state = bp_coh_states_e'(spec_bits_lo.state);
-              lce_cmd.payload = lce_cmd_payload;
+              lce_cmd.payload.dst_id = mem_resp_payload_li.lce_id;
+              lce_cmd.payload.way_id = mem_resp_payload_li.way_id;
+              lce_cmd.payload.state = bp_coh_states_e'(spec_bits_lo.state);
 
               // decrement pending bit on lce cmd header send
               pending_busy = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -784,10 +777,9 @@ module bp_cce_fsm
               lce_cmd.size = mem_resp_base_header_li.size;
 
               // command payload
-              lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-              lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-              lce_cmd_payload.state = mem_resp_payload_li.state;
-              lce_cmd.payload = lce_cmd_payload;
+              lce_cmd.payload.dst_id = mem_resp_payload_li.lce_id;
+              lce_cmd.payload.way_id = mem_resp_payload_li.way_id;
+              lce_cmd.payload.state = mem_resp_payload_li.state;
 
               // decrement pending bit on lce cmd header send
               pending_busy = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -823,10 +815,9 @@ module bp_cce_fsm
             lce_cmd.size = mem_resp_base_header_li.size;
 
             // command payload
-            lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-            lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-            lce_cmd_payload.state = mem_resp_payload_li.state;
-            lce_cmd.payload = lce_cmd_payload;
+            lce_cmd.payload.dst_id = mem_resp_payload_li.lce_id;
+            lce_cmd.payload.way_id = mem_resp_payload_li.way_id;
+            lce_cmd.payload.state = mem_resp_payload_li.state;
 
             // decrement pending bit on mem response dequeue (same as lce cmd send)
             pending_busy = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -860,8 +851,7 @@ module bp_cce_fsm
             lce_cmd.size = mem_resp_base_header_li.size;
 
             // command payload
-            lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-            lce_cmd.payload = lce_cmd_payload;
+            lce_cmd.payload.dst_id = mem_resp_payload_li.lce_id;
 
             // send data next cycle, after header sends
             mem_resp_state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
@@ -897,8 +887,7 @@ module bp_cce_fsm
             // leave size as '0 equivalent, no data in this message
 
             // command payload
-            lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-            lce_cmd.payload = lce_cmd_payload;
+            lce_cmd.payload.dst_id = mem_resp_payload_li.lce_id;
 
             // decrement pending bits if operating in normal mode and request was made
             // to coherent memory space
@@ -1054,7 +1043,7 @@ module bp_cce_fsm
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
+          mem_cmd_payload_lo.lce_id = lce_req.payload.src_id;
           mem_cmd_payload_lo.uncached = 1'b1;
           mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
           mem_cmd_data_lo = lce_req_data_i;
@@ -1072,7 +1061,7 @@ module bp_cce_fsm
 
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
+          mem_cmd_payload_lo.lce_id = lce_req.payload.src_id;
           mem_cmd_payload_lo.uncached = 1'b1;
           mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_rd;
@@ -1095,7 +1084,7 @@ module bp_cce_fsm
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
+          mem_cmd_payload_lo.lce_id = lce_req.payload.src_id;
           mem_cmd_payload_lo.uncached = 1'b1;
           mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
           mem_cmd_data_lo = lce_req_data_i;
@@ -1121,8 +1110,7 @@ module bp_cce_fsm
           lce_cmd_has_data_o = 1'b0;
 
           lce_cmd.msg_type.cmd = e_bedrock_cmd_sync;
-          lce_cmd_payload.dst_id[0+:lg_num_lce_lp] = cnt_1[0+:lg_num_lce_lp];
-          lce_cmd.payload = lce_cmd_payload;
+          lce_cmd.payload.dst_id[0+:lg_num_lce_lp] = cnt_1[0+:lg_num_lce_lp];
 
           state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i) ? e_sync_ack : e_send_sync;
           cnt_1_inc = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -1156,7 +1144,7 @@ module bp_cce_fsm
         cnt_rst = 1'b1;
 
         if (lce_req_v) begin
-          mshr_n.lce_id = lce_req_payload.src_id;
+          mshr_n.lce_id = lce_req.payload.src_id;
           state_n = e_error;
           // cached request
           if (lce_req.msg_type.req == e_bedrock_req_rd_miss
@@ -1164,9 +1152,9 @@ module bp_cce_fsm
 
             mshr_n.paddr = lce_req.addr;
             mshr_n.msg_size = lce_req.size;
-            mshr_n.lru_way_id = lce_req_payload.lru_way_id;
+            mshr_n.lru_way_id = lce_req.payload.lru_way_id;
             mshr_n.flags[e_opd_rqf] = (lce_req.msg_type.req == e_bedrock_req_wr_miss);
-            mshr_n.flags[e_opd_nerf] = lce_req_payload.non_exclusive;
+            mshr_n.flags[e_opd_nerf] = lce_req.payload.non_exclusive;
 
             // query PMA for coherence property - it is a violation for a cached request
             // to be incoherent.
@@ -1489,17 +1477,16 @@ module bp_cce_fsm
           // for an uc/amo request, the mshr way_id field indicates the way in which the requesting
           // LCE's copy of the cache block is stored at the LCE
           if (mshr_r.flags[e_opd_arf] | mshr_r.flags[e_opd_ucf]) begin
-            lce_cmd_payload.way_id = mshr_r.way_id;
+            lce_cmd.payload.way_id = mshr_r.way_id;
             lce_cmd.addr = mshr_r.paddr;
           end else begin
-            lce_cmd_payload.way_id = mshr_r.lru_way_id;
+            lce_cmd.payload.way_id = mshr_r.lru_way_id;
             lce_cmd.addr = mshr_r.lru_paddr;
           end
-          lce_cmd_payload.dst_id = mshr_r.lce_id;
+          lce_cmd.payload.dst_id = mshr_r.lce_id;
           // Note: this state must be e_COH_I to properly handle amo or uncached access to
           // coherent memory that requires invalidating the requesting LCE if it has the block
-          lce_cmd_payload.state = e_COH_I;
-          lce_cmd.payload = lce_cmd_payload;
+          lce_cmd.payload.state = e_COH_I;
 
           state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
                     ? e_replacement_wb_resp
@@ -1611,9 +1598,8 @@ module bp_cce_fsm
             lce_cmd.addr = mshr_r.paddr;
 
             // destination and way come from sharers information
-            lce_cmd_payload.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
-            lce_cmd_payload.way_id = sharers_ways_r[pe_lce_id];
-            lce_cmd.payload = lce_cmd_payload;
+            lce_cmd.payload.dst_id[0+:lg_num_lce_lp] = pe_lce_id;
+            lce_cmd.payload.way_id = sharers_ways_r[pe_lce_id];
 
             // message sent, increment count, write directory, clear bit for the destination LCE
             cnt_inc = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -1691,10 +1677,9 @@ module bp_cce_fsm
             lce_cmd_has_data_o = 1'b0;
 
             lce_cmd.addr = mshr_r.paddr;
-            lce_cmd_payload.dst_id = mshr_r.owner_lce_id;
-            lce_cmd_payload.way_id = mshr_r.owner_way_id;
-            lce_cmd_payload.state = e_COH_I;
-            lce_cmd.payload = lce_cmd_payload;
+            lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
+            lce_cmd.payload.way_id = mshr_r.owner_way_id;
+            lce_cmd.payload.state = e_COH_I;
 
             // either invalidate or set tag and writeback
             // if owner is in F state, block is clean, so only need to invalidate
@@ -1819,8 +1804,8 @@ module bp_cce_fsm
           lce_cmd_header_v_o = 1'b1;
           lce_cmd_has_data_o = 1'b0;
 
-          lce_cmd_payload.dst_id = mshr_r.owner_lce_id;
-          lce_cmd_payload.way_id = mshr_r.owner_way_id;
+          lce_cmd.payload.dst_id = mshr_r.owner_lce_id;
+          lce_cmd.payload.way_id = mshr_r.owner_way_id;
 
           lce_cmd.msg_type.cmd = mshr_r.flags[e_opd_rqf]
                                         ? e_bedrock_cmd_st_tr
@@ -1829,13 +1814,12 @@ module bp_cce_fsm
           lce_cmd.addr = mshr_r.paddr;
 
           // either Invalidate or Downgrade Owner, depending on request type
-          lce_cmd_payload.state = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
+          lce_cmd.payload.state = mshr_r.flags[e_opd_rqf] ? e_COH_I : e_COH_S;
 
           // transfer information
-          lce_cmd_payload.target = mshr_r.lce_id;
-          lce_cmd_payload.target_way_id = mshr_r.lru_way_id;
-          lce_cmd_payload.target_state = mshr_r.next_coh_state;
-          lce_cmd.payload = lce_cmd_payload;
+          lce_cmd.payload.target = mshr_r.lce_id;
+          lce_cmd.payload.target_way_id = mshr_r.lru_way_id;
+          lce_cmd.payload.target_state = mshr_r.next_coh_state;
 
           // update state of owner in directory
           dir_w_v = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -1902,10 +1886,9 @@ module bp_cce_fsm
 
           lce_cmd.msg_type.cmd = e_bedrock_cmd_st_wakeup;
           lce_cmd.addr = mshr_r.paddr;
-          lce_cmd_payload.dst_id = mshr_r.lce_id;
-          lce_cmd_payload.way_id = mshr_r.way_id;
-          lce_cmd_payload.state = mshr_r.next_coh_state;
-          lce_cmd.payload = lce_cmd_payload;
+          lce_cmd.payload.dst_id = mshr_r.lce_id;
+          lce_cmd.payload.way_id = mshr_r.way_id;
+          lce_cmd.payload.state = mshr_r.next_coh_state;
 
           state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
                     ? e_resolve_speculation

@@ -158,11 +158,6 @@ module bp_cce_msg
   assign lce_cmd_header_o = lce_cmd;
   assign lce_req = lce_req_header_i;
   assign lce_resp = lce_resp_header_i;
-  bp_bedrock_lce_req_payload_s lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_lce_cmd_payload_s lce_cmd_payload;
-  assign lce_req_payload = lce_req.payload;
-  assign lce_resp_payload = lce_resp.payload;
 
   // Config bus
   `declare_bp_cfg_bus_s(hio_width_p, core_id_width_p, cce_id_width_p, lce_id_width_p);
@@ -178,11 +173,8 @@ module bp_cce_msg
   // memory command and response message casting
   bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_lo;
   assign mem_cmd_header_o = mem_cmd_base_header_lo;
-  bp_bedrock_cce_mem_payload_s mem_cmd_payload_lo;
   bp_bedrock_cce_mem_msg_header_s mem_resp_base_header_li;
   assign mem_resp_base_header_li = mem_resp_header_i;
-  bp_bedrock_cce_mem_payload_s mem_resp_payload_li;
-  assign mem_resp_payload_li = mem_resp_base_header_li.payload;
 
   // memory command header register used to complete pushq mem_cmd
   bp_bedrock_cce_mem_msg_header_s mem_cmd_base_header_r, mem_cmd_base_header_n;
@@ -357,7 +349,6 @@ module bp_cce_msg
     mem_cmd_base_header_lo = '0;
     mem_cmd_v_o = '0;
     mem_cmd_data_o = '0;
-    mem_cmd_payload_lo = '0;
 
     // LCE request and response input control
     lce_req_header_yumi_o = '0;
@@ -368,8 +359,7 @@ module bp_cce_msg
     // LCE command output control
     lce_cmd_header_v_o = '0;
     lce_cmd = '0;
-    lce_cmd_payload = '0;
-    lce_cmd_payload.src_id = cfg_bus_cast_i.cce_id;
+    lce_cmd.payload.src_id = cfg_bus_cast_i.cce_id;
     lce_cmd_data_v_o = '0;
     lce_cmd_data_o = '0;
     lce_cmd_last_o = '0;
@@ -423,7 +413,7 @@ module bp_cce_msg
 
             // Speculative access response
             // Note: speculative access is only supported for cached requests
-            if (mem_resp_payload_li.speculative) begin
+            if (mem_resp_base_header_li.payload.speculative) begin
               // read from the speculative bits
               spec_r_v_o = 1'b1;
               spec_r_addr_o = mem_resp_base_header_li.addr;
@@ -475,10 +465,9 @@ module bp_cce_msg
 
                 // command payload
                 // modify the coherence state
-                lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-                lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-                lce_cmd_payload.state = bp_coh_states_e'(spec_bits_i.state);
-                lce_cmd.payload = lce_cmd_payload;
+                lce_cmd.payload.dst_id = mem_resp_base_header_li.payload.lce_id;
+                lce_cmd.payload.way_id = mem_resp_base_header_li.payload.way_id;
+                lce_cmd.payload.state = bp_coh_states_e'(spec_bits_i.state);
 
                 // decrement pending bit on lce cmd header send
                 pending_w_v_o = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -511,10 +500,9 @@ module bp_cce_msg
                 lce_cmd.size = mem_resp_base_header_li.size;
 
                 // command payload
-                lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-                lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-                lce_cmd_payload.state = mem_resp_payload_li.state;
-                lce_cmd.payload = lce_cmd_payload;
+                lce_cmd.payload.dst_id = mem_resp_base_header_li.payload.lce_id;
+                lce_cmd.payload.way_id = mem_resp_base_header_li.payload.way_id;
+                lce_cmd.payload.state = mem_resp_base_header_li.payload.state;
 
                 // decrement pending bit on lce cmd header send
                 pending_w_v_o = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -550,10 +538,9 @@ module bp_cce_msg
               lce_cmd.size = mem_resp_base_header_li.size;
 
               // command payload
-              lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-              lce_cmd_payload.way_id = mem_resp_payload_li.way_id;
-              lce_cmd_payload.state = mem_resp_payload_li.state;
-              lce_cmd.payload = lce_cmd_payload;
+              lce_cmd.payload.dst_id = mem_resp_base_header_li.payload.lce_id;
+              lce_cmd.payload.way_id = mem_resp_base_header_li.payload.way_id;
+              lce_cmd.payload.state = mem_resp_base_header_li.payload.state;
 
               // decrement pending bit on mem response dequeue (same as lce cmd send)
               pending_w_v_o = lce_cmd_header_v_o & lce_cmd_header_ready_and_i;
@@ -587,8 +574,7 @@ module bp_cce_msg
               lce_cmd.size = mem_resp_base_header_li.size;
 
               // command payload
-              lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-              lce_cmd.payload = lce_cmd_payload;
+              lce_cmd.payload.dst_id = mem_resp_base_header_li.payload.lce_id;
 
               // send data next cycle, after header sends
               mem_resp_state_n = (lce_cmd_header_v_o & lce_cmd_header_ready_and_i)
@@ -625,8 +611,7 @@ module bp_cce_msg
               // leave size as '0 equivalent, no data in this message
 
               // command payload
-              lce_cmd_payload.dst_id = mem_resp_payload_li.lce_id;
-              lce_cmd.payload = lce_cmd_payload;
+              lce_cmd.payload.dst_id = mem_resp_base_header_li.payload.lce_id;
 
               // decrement pending bits if operating in normal mode and request was made
               // to coherent memory space
@@ -743,9 +728,8 @@ module bp_cce_msg
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
-          mem_cmd_payload_lo.uncached = 1'b1;
-          mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
+          mem_cmd_base_header_lo.payload.lce_id = lce_req.payload.src_id;
+          mem_cmd_base_header_lo.payload.uncached = 1'b1;
           mem_cmd_data_o = lce_req_data_i;
 
           state_n = (mem_cmd_v_o & mem_cmd_ready_and_i) & ~mem_cmd_stream_done_i
@@ -763,9 +747,8 @@ module bp_cce_msg
 
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
-          mem_cmd_payload_lo.uncached = 1'b1;
-          mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
+          mem_cmd_base_header_lo.payload.lce_id = lce_req.payload.src_id;
+          mem_cmd_base_header_lo.payload.uncached = 1'b1;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_rd;
 
           mem_cmd_stall_o = ~(mem_cmd_v_o & mem_cmd_ready_and_i);
@@ -788,9 +771,8 @@ module bp_cce_msg
           mem_cmd_base_header_lo.addr = lce_req.addr;
           mem_cmd_base_header_lo.size = lce_req.size;
           mem_cmd_base_header_lo.msg_type.mem = e_bedrock_mem_uc_wr;
-          mem_cmd_payload_lo.lce_id = lce_req_payload.src_id;
-          mem_cmd_payload_lo.uncached = 1'b1;
-          mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
+          mem_cmd_base_header_lo.payload.lce_id = lce_req.payload.src_id;
+          mem_cmd_base_header_lo.payload.uncached = 1'b1;
           mem_cmd_data_o = lce_req_data_i;
 
           mem_cmd_stall_o = ~(mem_cmd_v_o & mem_cmd_ready_and_i);
@@ -863,7 +845,6 @@ module bp_cce_msg
         // Outbound messages - pushq
 
         // Memory Command
-        // TODO: fix this block
         else if (decoded_inst_i.mem_cmd_v) begin
 
           // Can only send Mem command if:
@@ -875,21 +856,20 @@ module bp_cce_msg
             mem_cmd_base_header_lo.msg_type.mem = decoded_inst_i.mem_cmd;
             mem_cmd_base_header_lo.addr = addr_i;
             mem_cmd_base_header_lo.size = mshr.msg_size;
-            mem_cmd_payload_lo.lce_id = lce_i;
-            mem_cmd_payload_lo.way_id = way_i;
-            mem_cmd_payload_lo.state = mshr.next_coh_state;
-            mem_cmd_payload_lo.state = e_COH_I;
+            mem_cmd_base_header_lo.payload.lce_id = lce_i;
+            mem_cmd_base_header_lo.payload.way_id = way_i;
+            mem_cmd_base_header_lo.payload.state = mshr.next_coh_state;
 
             // set speculative bit if instruction indicates it will be written
-            mem_cmd_payload_lo.speculative = decoded_inst_i.spec_w_v & decoded_inst_i.spec_v
-                                             & decoded_inst_i.spec_bits.spec;
+            mem_cmd_base_header_lo.payload.speculative = decoded_inst_i.spec_w_v & decoded_inst_i.spec_v
+                                                         & decoded_inst_i.spec_bits.spec;
 
             unique case (decoded_inst_i.mem_cmd)
               // uncached read - send single beat, no data
               e_bedrock_mem_uc_rd: begin
                 mem_cmd_v_o = ~mem_credits_empty;
                 // set uncached bit
-                mem_cmd_payload_lo.uncached = 1'b1;
+                mem_cmd_base_header_lo.payload.uncached = 1'b1;
                 // stall if single beat doesn't send
                 mem_cmd_stall_o = ~(mem_cmd_v_o & mem_cmd_ready_and_i);
               end
@@ -902,7 +882,7 @@ module bp_cce_msg
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
-                mem_cmd_payload_lo.uncached = mshr.flags[e_opd_ucf];
+                mem_cmd_base_header_lo.payload.uncached = mshr.flags[e_opd_ucf];
                 // stall if single beat doesn't send
                 mem_cmd_stall_o = ~(mem_cmd_v_o & mem_cmd_ready_and_i);
               end
@@ -916,7 +896,7 @@ module bp_cce_msg
                 mem_cmd_data_o = lce_req_data_i;
 
                 // set uncached bit
-                mem_cmd_payload_lo.uncached = 1'b1;
+                mem_cmd_base_header_lo.payload.uncached = 1'b1;
 
                 // only need to send more data if stream pump doesn't indicate stream is done
                 state_n = (mem_cmd_v_o & mem_cmd_ready_and_i & ~mem_cmd_stream_done_i)
@@ -940,7 +920,7 @@ module bp_cce_msg
                 // set uncached bit based on uncached flag in MSHR
                 // this bit indicates if the LCE should receive the data as cached or uncached
                 // when it returns from memory
-                mem_cmd_payload_lo.uncached = mshr.flags[e_opd_ucf];
+                mem_cmd_base_header_lo.payload.uncached = mshr.flags[e_opd_ucf];
 
                 // only need to send more data if stream pump doesn't indicate stream is done
                 state_n = (mem_cmd_v_o & mem_cmd_ready_and_i & ~mem_cmd_stream_done_i)
@@ -953,16 +933,13 @@ module bp_cce_msg
 
               e_bedrock_mem_pre: begin
                 // TODO: implement prefetch functionality
-                mem_cmd_payload_lo.prefetch = 1'b1;
+                mem_cmd_base_header_lo.payload.prefetch = 1'b1;
               end
 
               default: begin
               end
             endcase
           end
-
-          // assign payload struct into memory command header
-          mem_cmd_base_header_lo.payload = mem_cmd_payload_lo;
 
           // capture the mem_cmd header in case command will send data in following cycle
           mem_cmd_base_header_n = mem_cmd_base_header_lo;
@@ -987,7 +964,7 @@ module bp_cce_msg
 
             // all commands set src, dst, message type and address
             // defaults provided here, but may be overridden below
-            lce_cmd_payload.dst_id = lce_i;
+            lce_cmd.payload.dst_id = lce_i;
             lce_cmd.msg_type.cmd = decoded_inst_i.lce_cmd;
             lce_cmd.addr = addr_i;
 
@@ -996,7 +973,7 @@ module bp_cce_msg
               lce_cmd.size = decoded_inst_i.msg_size;
             end else begin
               // all commands set the way_id field
-              lce_cmd_payload.way_id = way_i;
+              lce_cmd.payload.way_id = way_i;
 
               // commands including a set state operation set the state field
               if ((decoded_inst_i.lce_cmd == e_bedrock_cmd_st)
@@ -1005,7 +982,7 @@ module bp_cce_msg
                 // decoder sets coh_state_i to mshr.next_coh_state so any ST_X command
                 // that doesn't include a transfer needs to set mshr.next_coh_state
                 // to the correct value before sending the command (pushq)
-                lce_cmd_payload.state = coh_state_i;
+                lce_cmd.payload.state = coh_state_i;
               end
 
               if ((decoded_inst_i.lce_cmd == e_bedrock_cmd_st_tr)
@@ -1013,7 +990,7 @@ module bp_cce_msg
                 // when doing a set state + transfer, the state field indicates the
                 // next state for the owner LCE, and target_state (set below) will provide
                 // the state for the LCE receiving the transfer
-                lce_cmd_payload.state = mshr.owner_coh_state;
+                lce_cmd.payload.state = mshr.owner_coh_state;
               end
 
               // Transfer commands set target, target way, and target state fields
@@ -1022,13 +999,11 @@ module bp_cce_msg
               if ((decoded_inst_i.lce_cmd == e_bedrock_cmd_tr)
                   | (decoded_inst_i.lce_cmd == e_bedrock_cmd_st_tr)
                   | (decoded_inst_i.lce_cmd == e_bedrock_cmd_st_tr_wb)) begin
-                lce_cmd_payload.target_state = coh_state_i;
-                lce_cmd_payload.target = mshr.lce_id;
-                lce_cmd_payload.target_way_id = mshr.lru_way_id;
+                lce_cmd.payload.target_state = coh_state_i;
+                lce_cmd.payload.target = mshr.lce_id;
+                lce_cmd.payload.target_way_id = mshr.lru_way_id;
               end
             end
-            // assign the payload struct into the command
-            lce_cmd.payload = lce_cmd_payload;
           end
         end // LCE Command
 
@@ -1049,10 +1024,8 @@ module bp_cce_msg
           // leave size as '0 equivalent, no data sent for invalidate
 
           // destination and way come from sharers information
-          lce_cmd_payload.dst_id = pe_lce_id;
-          lce_cmd_payload.way_id = sharers_ways_r[pe_lce_id];
-
-          lce_cmd.payload = lce_cmd_payload;
+          lce_cmd.payload.dst_id = pe_lce_id;
+          lce_cmd.payload.way_id = sharers_ways_r[pe_lce_id];
 
           lce_cmd.addr = addr_r;
 

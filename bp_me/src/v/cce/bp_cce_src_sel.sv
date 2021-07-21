@@ -104,16 +104,10 @@ module bp_cce_src_sel
   bp_bedrock_lce_req_msg_header_s  lce_req_header_li;
   bp_bedrock_lce_resp_msg_header_s lce_resp_header_li;
   bp_bedrock_cce_mem_msg_header_s  mem_resp_header_li;
-  bp_bedrock_lce_req_payload_s  lce_req_payload;
-  bp_bedrock_lce_resp_payload_s lce_resp_payload;
-  bp_bedrock_cce_mem_payload_s  mem_resp_payload;
 
   assign lce_req_header_li   = lce_req_header_i;
   assign lce_resp_header_li  = lce_resp_header_i;
   assign mem_resp_header_li  = mem_resp_header_i;
-  assign lce_req_payload = lce_req_header_li.payload;
-  assign lce_resp_payload = lce_resp_header_li.payload;
-  assign mem_resp_payload = mem_resp_header_li.payload;
 
   always_comb begin
     src_a_o = '0;
@@ -333,9 +327,9 @@ module bp_cce_src_sel
       e_mux_sel_lce_r7:         lce_o = gpr_i[e_opd_r7][0+:lce_id_width_p];
       e_mux_sel_lce_mshr_req:   lce_o = mshr.lce_id;
       e_mux_sel_lce_mshr_owner: lce_o = mshr.owner_lce_id;
-      e_mux_sel_lce_lce_req:    lce_o = lce_req_payload.src_id;
-      e_mux_sel_lce_lce_resp:   lce_o = lce_resp_payload.src_id;
-      e_mux_sel_lce_mem_resp:   lce_o = mem_resp_payload.lce_id;
+      e_mux_sel_lce_lce_req:    lce_o = lce_req_header_li.payload.src_id;
+      e_mux_sel_lce_lce_resp:   lce_o = lce_resp_header_li.payload.src_id;
+      e_mux_sel_lce_mem_resp:   lce_o = mem_resp_header_li.payload.lce_id;
       e_mux_sel_lce_pending:    lce_o = '0;
       e_mux_sel_lce_0:          lce_o = '0;
       default:                  lce_o = '0;
