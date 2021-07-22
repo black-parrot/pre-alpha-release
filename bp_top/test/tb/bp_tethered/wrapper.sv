@@ -185,13 +185,19 @@ module wrapper
     end
   else
     begin : unicore
+      wire [io_noc_did_width_p-1:0] proc_did_li = 1;
+      wire [io_noc_did_width_p-1:0] dram_did_li = '1;
+
       `declare_bp_bedrock_mem_if(paddr_width_p, uce_mem_data_width_lp, lce_id_width_p, lce_assoc_p, uce);
       bp_bedrock_uce_mem_msg_s io_cmd_lo, io_cmd_li;
       bp_bedrock_uce_mem_msg_s io_resp_lo, io_resp_li;
       bp_unicore
        #(.bp_params_p(bp_params_p))
        dut
-        (.io_cmd_o(io_cmd_lo)
+        (.my_did_i(proc_did_li)
+         ,.host_did_i(dram_did_li)
+         ,.my_cord_i({coh_noc_y_cord_width_p'(1), coh_noc_x_cord_width_p'(0)})
+         ,.io_cmd_o(io_cmd_lo)
          ,.io_cmd_i(io_cmd_li)
          ,.io_resp_o(io_resp_lo)
          ,.io_resp_i(io_resp_li)
